@@ -1,0 +1,94 @@
+@import "tailwindcss";
+
+@theme {
+  --color-primary: #00D09C;
+  --color-primary-dark: #00B386;
+  --color-primary-light: #E6FBF5;
+  --color-accent: #387ED1;
+  --color-accent-dark: #2B63A8;
+  --color-surface: #FFFFFF;
+  --color-surface-secondary: #F0F3F7;
+  --color-surface-tertiary: #E2E8F0;
+  --color-text-primary: #1A1D26;
+  --color-text-secondary: #6B7280;
+  --color-text-muted: #9CA3AF;
+  --color-border: #DDE3EA;
+  --color-success: #00C076;
+  --color-danger: #FF5252;
+  --color-warning: #FFB800;
+
+  /* Broker / terminal theme */
+  --color-market-bg: #131722;
+  --color-market-surface: #1E222D;
+  --color-market-card: #1A1E29;
+  --color-market-border: #2A2E39;
+  --color-market-text: #D1D4DC;
+  --color-market-muted: #787B86;
+  --color-market-up: #00C076;
+  --color-market-down: #FF5252;
+  --color-market-warning: #FFB800;
+  --color-market-accent: #387ED1;
+
+  --font-sans: "Inter", system-ui, -apple-system, sans-serif;
+  --font-mono: "JetBrains Mono", "SF Mono", "Fira Code", monospace;
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+
+  body {
+    @apply bg-market-bg text-market-text font-sans antialiased;
+  }
+}
+
+@layer utilities {
+  .gradient-primary {
+    background: linear-gradient(135deg, #00D09C 0%, #00B386 100%);
+  }
+
+  .gradient-hero {
+    background: linear-gradient(135deg, #0A1628 0%, #131722 50%, #1E222D 100%);
+  }
+
+  .glass-card {
+    background: rgba(255, 255, 255, 0.06);
+    backdrop-filter: blur(12px);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+  }
+
+  .font-mono-nums {
+    font-family: var(--font-mono);
+    font-variant-numeric: tabular-nums;
+  }
+
+  .market-panel {
+    @apply rounded-lg border border-market-border bg-market-card;
+  }
+
+  .text-profit {
+    @apply text-market-up;
+  }
+
+  .text-loss {
+    @apply text-market-down;
+  }
+}
+
+@keyframes ticker {
+  0% {
+    transform: translateX(0);
+  }
+  100% {
+    transform: translateX(-50%);
+  }
+}
+
+.animate-ticker {
+  animation: ticker 40s linear infinite;
+}
+
+.animate-ticker:hover {
+  animation-play-state: paused;
+}
