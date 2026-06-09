@@ -1,6 +1,6 @@
 # PortfolioIQ — Smart Asset Manager
 
-A full-stack portfolio analysis web app for Indian investors, inspired by Groww and Zerodha Kite.
+A full-stack portfolio analysis web app for Indian investors.
 
 ## Features
 
@@ -36,7 +36,7 @@ Open [http://localhost:3000](http://localhost:3000)
 
 ## Try It
 
-1. Go to **Analyze** and upload `public/sample-holdings.csv` for instant basic analysis
+1. Go to **Analyze** and upload `../sample.csv` for instant basic analysis
 2. **Sign up** for free to unlock momentum, fundamentals, and smart suggestions
 3. **Save portfolios** from the Portfolio page for ongoing tracking
 
