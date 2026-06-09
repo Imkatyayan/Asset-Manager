@@ -1,4 +1,10 @@
-import { BENCHMARKS, enrichHolding, type StockFundamentals } from "./market-data";
+import {
+  BENCHMARKS,
+  enrichHoldingsBatch,
+  getLiveBenchmarks,
+  type LiveBenchmarks,
+  type StockFundamentals,
+} from "./market-data";
 import type { ParsedHolding } from "./csv-parser";
 
 export interface EnrichedHolding {
@@ -76,29 +82,36 @@ const SECTOR_COLORS: Record<string, string> = {
   Unknown: "#9E9E9E",
 };
 
-function enrichHoldings(holdings: ParsedHolding[]): EnrichedHolding[] {
-  return holdings.map((h) => {
-    const enriched = enrichHolding(h.symbol, h.avgPrice);
-    const invested = h.quantity * h.avgPrice;
-    const currentValue = h.quantity * enriched.currentPrice;
-    const returns = currentValue - invested;
-    const returnsPercent = invested > 0 ? (returns / invested) * 100 : 0;
+function mapEnrichedHolding(
+  h: ParsedHolding,
+  enriched: Awaited<ReturnType<typeof enrichHoldingsBatch>>[number]
+): EnrichedHolding {
+  const invested = h.quantity * h.avgPrice;
+  const currentValue = h.quantity * enriched.currentPrice;
+  const returns = currentValue - invested;
+  const returnsPercent = invested > 0 ? (returns / invested) * 100 : 0;
 
-    return {
-      symbol: enriched.symbol,
-      name: enriched.name,
-      quantity: h.quantity,
-      avgPrice: h.avgPrice,
-      currentPrice: enriched.currentPrice,
-      invested,
-      currentValue,
-      returns,
-      returnsPercent,
-      sector: enriched.sector,
-      weight: 0,
-      fundamentals: enriched.fundamentals,
-    };
-  });
+  return {
+    symbol: enriched.symbol,
+    name: enriched.name,
+    quantity: h.quantity,
+    avgPrice: h.avgPrice,
+    currentPrice: enriched.currentPrice,
+    invested,
+    currentValue,
+    returns,
+    returnsPercent,
+    sector: enriched.sector,
+    weight: 0,
+    fundamentals: enriched.fundamentals,
+  };
+}
+
+async function enrichHoldings(holdings: ParsedHolding[]): Promise<EnrichedHolding[]> {
+  const enriched = await enrichHoldingsBatch(
+    holdings.map((h) => ({ symbol: h.symbol, avgPrice: h.avgPrice }))
+  );
+  return holdings.map((h, i) => mapEnrichedHolding(h, enriched[i]));
 }
 
 function computeWeights(holdings: EnrichedHolding[]): EnrichedHolding[] {
@@ -131,21 +144,27 @@ function computePortfolioReturn(holdings: EnrichedHolding[]): number {
   return totalInvested > 0 ? ((totalValue - totalInvested) / totalInvested) * 100 : 0;
 }
 
-function buildBenchmarkComparison(portfolioReturn: number): BenchmarkComparison[] {
+function buildBenchmarkComparison(
+  portfolioReturn: number,
+  benchmarks: LiveBenchmarks = {
+    nifty50: { name: BENCHMARKS.nifty50.name, yearReturn: BENCHMARKS.nifty50.yearReturn },
+    sensex: { name: BENCHMARKS.sensex.name, yearReturn: BENCHMARKS.sensex.yearReturn },
+  }
+): BenchmarkComparison[] {
   return [
     {
-      name: BENCHMARKS.nifty50.name,
+      name: benchmarks.nifty50.name,
       portfolioReturn,
-      benchmarkReturn: BENCHMARKS.nifty50.yearReturn,
-      alpha: portfolioReturn - BENCHMARKS.nifty50.yearReturn,
-      outperforming: portfolioReturn > BENCHMARKS.nifty50.yearReturn,
+      benchmarkReturn: benchmarks.nifty50.yearReturn,
+      alpha: portfolioReturn - benchmarks.nifty50.yearReturn,
+      outperforming: portfolioReturn > benchmarks.nifty50.yearReturn,
     },
     {
-      name: BENCHMARKS.sensex.name,
+      name: benchmarks.sensex.name,
       portfolioReturn,
-      benchmarkReturn: BENCHMARKS.sensex.yearReturn,
-      alpha: portfolioReturn - BENCHMARKS.sensex.yearReturn,
-      outperforming: portfolioReturn > BENCHMARKS.sensex.yearReturn,
+      benchmarkReturn: benchmarks.sensex.yearReturn,
+      alpha: portfolioReturn - benchmarks.sensex.yearReturn,
+      outperforming: portfolioReturn > benchmarks.sensex.yearReturn,
     },
   ];
 }
@@ -166,7 +185,10 @@ function sortSuggestions(suggestions: Suggestion[]): Suggestion[] {
 }
 
 /** Recommendations available to free / guest users */
-function generateBasicSuggestions(holdings: EnrichedHolding[]): Suggestion[] {
+function generateBasicSuggestions(
+  holdings: EnrichedHolding[],
+  niftyYearReturn: number = BENCHMARKS.nifty50.yearReturn
+): Suggestion[] {
   const suggestions: Suggestion[] = [];
   const sorted = [...holdings].sort((a, b) => b.weight - a.weight);
   const portfolioReturn = computePortfolioReturn(holdings);
@@ -241,12 +263,12 @@ function generateBasicSuggestions(holdings: EnrichedHolding[]): Suggestion[] {
     }
   }
 
-  if (portfolioReturn < BENCHMARKS.nifty50.yearReturn) {
+  if (portfolioReturn < niftyYearReturn) {
     suggestions.push({
       type: "increase",
       priority: "high",
       title: "Trailing NIFTY 50 — add index exposure",
-      description: `Your ${portfolioReturn.toFixed(1)}% return trails NIFTY 50 (${BENCHMARKS.nifty50.yearReturn}%). Allocate 20–30% to a NIFTY 50 index fund as a core holding.`,
+      description: `Your ${portfolioReturn.toFixed(1)}% return trails NIFTY 50 (${niftyYearReturn}%). Allocate 20–30% to a NIFTY 50 index fund as a core holding.`,
     });
   } else {
     suggestions.push({
@@ -291,8 +313,12 @@ function generateBasicSuggestions(holdings: EnrichedHolding[]): Suggestion[] {
   return sortSuggestions(suggestions).slice(0, 6);
 }
 
-export function analyzeBasic(holdings: ParsedHolding[]): BasicAnalysis {
-  const enriched = computeWeights(enrichHoldings(holdings));
+export async function analyzeBasic(holdings: ParsedHolding[]): Promise<BasicAnalysis> {
+  const [enrichedRaw, benchmarks] = await Promise.all([
+    enrichHoldings(holdings),
+    getLiveBenchmarks(),
+  ]);
+  const enriched = computeWeights(enrichedRaw);
   const totalInvested = enriched.reduce((s, h) => s + h.invested, 0);
   const totalValue = enriched.reduce((s, h) => s + h.currentValue, 0);
   const totalReturns = totalValue - totalInvested;
@@ -307,13 +333,16 @@ export function analyzeBasic(holdings: ParsedHolding[]): BasicAnalysis {
     holdings: enriched,
     sectorAllocation: buildSectorAllocation(enriched),
     topHoldings: [...enriched].sort((a, b) => b.currentValue - a.currentValue).slice(0, 5),
-    benchmarkComparison: buildBenchmarkComparison(portfolioReturn),
-    suggestions: generateBasicSuggestions(enriched),
+    benchmarkComparison: buildBenchmarkComparison(portfolioReturn, benchmarks),
+    suggestions: generateBasicSuggestions(enriched, benchmarks.nifty50.yearReturn),
     concentrationRisk: computeConcentration(enriched),
   };
 }
 
-function generateFullSuggestions(holdings: EnrichedHolding[]): Suggestion[] {
+function generateFullSuggestions(
+  holdings: EnrichedHolding[],
+  niftyYearReturn: number = BENCHMARKS.nifty50.yearReturn
+): Suggestion[] {
   const suggestions: Suggestion[] = [];
   const sorted = [...holdings].sort((a, b) => b.weight - a.weight);
 
@@ -402,12 +431,12 @@ function generateFullSuggestions(holdings: EnrichedHolding[]): Suggestion[] {
 
   // Underperformers vs benchmark
   const portfolioReturn = computePortfolioReturn(holdings);
-  if (portfolioReturn < BENCHMARKS.nifty50.yearReturn) {
+  if (portfolioReturn < niftyYearReturn) {
     suggestions.push({
       type: "rebalance",
       priority: "high",
       title: "Underperforming NIFTY 50",
-      description: `Portfolio return of ${portfolioReturn.toFixed(1)}% trails NIFTY 50 (${BENCHMARKS.nifty50.yearReturn}%). Consider adding index fund exposure or reviewing laggards.`,
+      description: `Portfolio return of ${portfolioReturn.toFixed(1)}% trails NIFTY 50 (${niftyYearReturn}%). Consider adding index fund exposure or reviewing laggards.`,
     });
   }
 
@@ -433,7 +462,7 @@ function generateFullSuggestions(holdings: EnrichedHolding[]): Suggestion[] {
     });
   }
 
-  const basicSuggestions = generateBasicSuggestions(holdings);
+  const basicSuggestions = generateBasicSuggestions(holdings, niftyYearReturn);
   const combined = [...suggestions, ...basicSuggestions];
   const seen = new Set<string>();
   const unique = combined.filter((s) => {
@@ -446,9 +475,10 @@ function generateFullSuggestions(holdings: EnrichedHolding[]): Suggestion[] {
   return sortSuggestions(unique);
 }
 
-export function analyzeFull(holdings: ParsedHolding[]): FullAnalysis {
-  const basic = analyzeBasic(holdings);
+export async function analyzeFull(holdings: ParsedHolding[]): Promise<FullAnalysis> {
+  const basic = await analyzeBasic(holdings);
   const enriched = basic.holdings;
+  const benchmarks = await getLiveBenchmarks();
 
   const withFundamentals = enriched.filter((h) => h.fundamentals);
   const momentumScore =
@@ -511,7 +541,7 @@ export function analyzeFull(holdings: ParsedHolding[]): FullAnalysis {
     riskScore: Math.round(riskScore),
     diversificationScore: Math.round(diversificationScore),
     overallHealthScore,
-    suggestions: generateFullSuggestions(enriched),
+    suggestions: generateFullSuggestions(enriched, benchmarks.nifty50.yearReturn),
     trendBreakdown,
     peAnalysis: {
       avgPE: Math.round(avgPE * 10) / 10,

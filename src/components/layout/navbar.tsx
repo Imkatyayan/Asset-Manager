@@ -2,9 +2,10 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { BarChart3, LogOut, Menu, X, LayoutDashboard, PieChart, Upload, HelpCircle } from "lucide-react";
+import { BarChart3, LogOut, Menu, X, LayoutDashboard, PieChart, Upload, HelpCircle, LineChart } from "lucide-react";
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
+import { ThemeToggle } from "@/components/layout/theme-toggle";
 import { cn } from "@/lib/utils";
 
 interface NavbarProps {
@@ -18,11 +19,13 @@ export function Navbar({ user }: NavbarProps) {
   const navLinks = user
     ? [
         { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
+        { href: "/markets", label: "Markets", icon: LineChart },
         { href: "/portfolio", label: "Holdings", icon: PieChart },
         { href: "/analyze", label: "Analyze", icon: Upload },
         { href: "/support", label: "Support", icon: HelpCircle },
       ]
     : [
+        { href: "/markets", label: "Markets", icon: LineChart },
         { href: "/analyze", label: "Analyze", icon: Upload },
         { href: "/support", label: "Support", icon: HelpCircle },
       ];
@@ -40,7 +43,8 @@ export function Navbar({ user }: NavbarProps) {
             <BarChart3 className="h-4 w-4 text-white" />
           </div>
           <span className="text-base font-bold text-market-text">
-            Port<span className="text-market-up">folioIQ</span>
+            Port<span className="text-market-up">folio</span>
+            <span className="text-market-down">IQ</span>
           </span>
         </Link>
 
@@ -63,6 +67,7 @@ export function Navbar({ user }: NavbarProps) {
         </div>
 
         <div className="hidden items-center gap-2 md:flex">
+          <ThemeToggle />
           {user ? (
             <>
               <span className="text-xs text-market-muted">
@@ -94,6 +99,10 @@ export function Navbar({ user }: NavbarProps) {
 
       {mobileOpen && (
         <div className="border-t border-market-border bg-market-surface px-4 py-3 md:hidden">
+          <div className="mb-2 flex items-center justify-between px-3">
+            <span className="text-xs text-market-muted">Theme</span>
+            <ThemeToggle />
+          </div>
           {navLinks.map((link) => (
             <Link
               key={link.href}

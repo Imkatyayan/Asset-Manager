@@ -29,7 +29,7 @@ export async function POST(req: NextRequest) {
     const isAuthenticated = !!session;
 
     if (isAuthenticated) {
-      const analysis = analyzeFull(holdings);
+      const analysis = await analyzeFull(holdings);
       return NextResponse.json({
         tier: "full",
         source,
@@ -40,7 +40,7 @@ export async function POST(req: NextRequest) {
       });
     }
 
-    const analysis = analyzeBasic(holdings);
+    const analysis = await analyzeBasic(holdings);
     return NextResponse.json({
       tier: "basic",
       source,

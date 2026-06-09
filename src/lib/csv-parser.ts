@@ -75,6 +75,8 @@ const AVG_PRICE_KEYS = [
   "buy avg",
   "purchase rate",
   "average_price",
+  "price",
+  "rate",
 ];
 
 const LTP_KEYS = [
@@ -85,8 +87,7 @@ const LTP_KEYS = [
   "market price",
   "close price",
   "closing price",
-  "price",
-  "rate",
+  "last",
 ];
 
 const VALUE_KEYS = [
@@ -376,13 +377,16 @@ export function parseHoldingsCSV(rawContent: string): ParseResult {
   const ltpCol = findColumn(headers, LTP_KEYS);
   const valueCol = findColumn(headers, VALUE_KEYS);
 
+  // Don't reuse the same column as both avg price and LTP
+  const effectiveLtpCol = ltpCol && ltpCol !== avgPriceCol ? ltpCol : null;
+
   const detectedColumns = {
     symbol: symbolCol,
     name: nameCol,
     isin: isinCol,
     quantity: qtyCol,
     avgPrice: avgPriceCol,
-    ltp: ltpCol,
+    ltp: effectiveLtpCol,
     value: valueCol,
   };
 
@@ -414,7 +418,7 @@ export function parseHoldingsCSV(rawContent: string): ParseResult {
       : symbol;
 
     let avgPrice = avgPriceCol ? parseNumber(row[avgPriceCol]) : 0;
-    const ltp = ltpCol ? parseNumber(row[ltpCol]) : 0;
+    const ltp = effectiveLtpCol ? parseNumber(row[effectiveLtpCol]) : 0;
     const totalValue = valueCol ? parseNumber(row[valueCol]) : 0;
 
     // Derive avg price from available data
@@ -422,15 +426,20 @@ export function parseHoldingsCSV(rawContent: string): ParseResult {
       const colNorm = valueCol ? normalizeKey(valueCol) : "";
       if (colNorm.includes("invested") || colNorm.includes("cost")) {
         avgPrice = totalValue / quantity;
-      } else if (ltp > 0) {
-        // Market value — use LTP as proxy for avg if we have it
-        avgPrice = ltp;
+      } else if (colNorm.includes("current") || colNorm.includes("market")) {
+        // Market value column — don't use as cost basis; derive from invested if possible
+        if (ltp <= 0) {
+          errors.push(
+            `Row ${symbol}: only market value found — add Avg Buy Price for accurate P&L`
+          );
+        }
       } else {
         avgPrice = totalValue / quantity;
       }
     }
 
-    if (avgPrice <= 0 && ltp > 0) {
+    if (avgPrice <= 0 && ltp > 0 && !avgPriceCol) {
+      // No cost basis column — flag but allow analysis with live prices only
       avgPrice = ltp;
     }
 

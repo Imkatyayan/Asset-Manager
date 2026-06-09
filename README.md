@@ -7,7 +7,8 @@ A full-stack portfolio analysis web app for Indian investors, inspired by Groww 
 - **CSV Upload** — Import holdings from CDSL, NSDL, Zerodha, Groww, or any broker
 - **Guest Analysis** — Basic analysis without signup (returns, allocation, index comparison)
 - **Full Analysis** (logged in) — Momentum scores, fundamentals (P/E, ROE, debt), smart suggestions
-- **Benchmark Comparison** — Compare against NIFTY 50 and Sensex
+- **Live Markets** — Search any NSE/BSE stock, index, or ETF with price, volume, RSI/SMA indicators, and Indian news
+- **Benchmark Comparison** — Compare against live NIFTY 50 and Sensex returns
 - **Smart Suggestions** — Rebalancing, diversification, and allocation recommendations
 - **Portfolio Management** — Save and track multiple portfolios
 
@@ -74,4 +75,4 @@ src/
 
 ## Disclaimer
 
-PortfolioIQ is for educational purposes only. Not SEBI-registered investment advice. Market data in this demo is illustrative.
+PortfolioIQ is for educational purposes only. Not SEBI-registered investment advice. Live prices and index returns are fetched from Yahoo Finance (15-minute cache); fundamentals for known stocks use a static reference dataset.

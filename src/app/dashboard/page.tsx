@@ -4,6 +4,7 @@ import { Upload, TrendingUp, PieChart, ArrowRight } from "lucide-react";
 import { getSession } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { analyzeFull } from "@/lib/analysis";
+import { enrichHoldingsBatch } from "@/lib/market-data";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { PortfolioSummary } from "@/components/analysis/portfolio-summary";
@@ -25,6 +26,18 @@ export default async function DashboardPage() {
 
   const latestPortfolio = portfolios[0];
   let analysis = null;
+  const portfolioValues: Record<string, number> = {};
+
+  for (const portfolio of portfolios) {
+    if (portfolio.holdings.length === 0) continue;
+    const enriched = await enrichHoldingsBatch(
+      portfolio.holdings.map((h) => ({ symbol: h.symbol, avgPrice: h.avgPrice }))
+    );
+    portfolioValues[portfolio.id] = portfolio.holdings.reduce(
+      (sum, h, i) => sum + h.quantity * enriched[i].currentPrice,
+      0
+    );
+  }
 
   if (latestPortfolio && latestPortfolio.holdings.length > 0) {
     const holdings = latestPortfolio.holdings.map((h) => ({
@@ -33,7 +46,7 @@ export default async function DashboardPage() {
       quantity: h.quantity,
       avgPrice: h.avgPrice,
     }));
-    analysis = analyzeFull(holdings);
+    analysis = await analyzeFull(holdings);
   }
 
   return (
@@ -149,12 +162,7 @@ export default async function DashboardPage() {
                     </p>
                   </div>
                   <span className="text-sm font-medium text-text-secondary">
-                    {formatCurrency(
-                      p.holdings.reduce(
-                        (s, h) => s + h.quantity * (h.currentPrice || h.avgPrice),
-                        0
-                      )
-                    )}
+                    {formatCurrency(portfolioValues[p.id] ?? 0)}
                   </span>
                 </div>
               ))}

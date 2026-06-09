@@ -3,7 +3,7 @@ import { getSession } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { parseHoldingsCSV } from "@/lib/csv-parser";
 import { analyzeFull } from "@/lib/analysis";
-import { enrichHolding } from "@/lib/market-data";
+import { enrichHoldingsBatch } from "@/lib/market-data";
 
 export async function GET() {
   const session = await getSession();
@@ -39,14 +39,18 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: errors[0] || "No holdings found" }, { status: 400 });
     }
 
+    const enrichedHoldings = await enrichHoldingsBatch(
+      holdings.map((h) => ({ symbol: h.symbol, avgPrice: h.avgPrice }))
+    );
+
     const portfolio = await prisma.portfolio.create({
       data: {
         name: name || `Portfolio - ${new Date().toLocaleDateString("en-IN")}`,
         source,
         userId: session.id,
         holdings: {
-          create: holdings.map((h) => {
-            const enriched = enrichHolding(h.symbol, h.avgPrice);
+          create: holdings.map((h, i) => {
+            const enriched = enrichedHoldings[i];
             return {
               symbol: enriched.symbol,
               name: enriched.name,
@@ -61,7 +65,7 @@ export async function POST(req: NextRequest) {
       include: { holdings: true },
     });
 
-    const analysis = analyzeFull(holdings);
+    const analysis = await analyzeFull(holdings);
 
     return NextResponse.json({ portfolio, analysis, warnings: errors });
   } catch {

@@ -29,7 +29,7 @@ const faqs = [
   },
   {
     q: "How accurate is the market data?",
-    a: "This demo uses a curated dataset of major NIFTY 50 stocks with representative fundamentals and prices. In production, this would connect to live market data APIs. Prices and metrics are for illustrative purposes.",
+    a: "Live prices, index levels, volume, and technical indicators are fetched from Yahoo Finance and refreshed every 5 minutes. Indian market news comes from Google News (India). Fundamental ratios (P/E, ROE) for known stocks use a reference dataset — always verify prices on the Markets page before making decisions.",
   },
   {
     q: "Is this investment advice?",

@@ -4,6 +4,7 @@ import "./globals.css";
 import { getSession } from "@/lib/auth";
 import { Navbar } from "@/components/layout/navbar";
 import { MarketTicker } from "@/components/layout/market-ticker";
+import { ThemeProvider } from "@/components/layout/theme-provider";
 import { Footer } from "@/components/layout/footer";
 
 const inter = Inter({ subsets: ["latin"], variable: "--font-sans" });
@@ -23,12 +24,15 @@ export default async function RootLayout({
   const session = await getSession();
 
   return (
-    <html lang="en">
+    <html lang="en" suppressHydrationWarning>
       <body className={`${inter.variable} ${jetbrains.variable} font-sans`}>
-        <Navbar user={session} />
-        <MarketTicker />
-        <main className="min-h-[calc(100vh-6rem)]">{children}</main>
-        <Footer />
+        <ThemeProvider>
+          <div className="bse-accent-bar" />
+          <Navbar user={session} />
+          <MarketTicker />
+          <main className="min-h-[calc(100vh-6rem)]">{children}</main>
+          <Footer />
+        </ThemeProvider>
       </body>
     </html>
   );

@@ -55,18 +55,19 @@ export default async function HomePage() {
         <div className="absolute inset-0 bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNjAiIGhlaWdodD0iNjAiIHZpZXdCb3g9IjAgMCA2MCA2MCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48ZyBmaWxsPSJub25lIiBmaWxsLXJ1bGU9ImV2ZW5vZGQiPjxnIGZpbGw9IiNmZmYiIGZpbGwtb3BhY2l0eT0iMC4wMyI+PHBhdGggZD0iTTM2IDM0djItaDJ2LTJoLTJ6bTAtNHYyaDJ2LTJoLTJ6bTAtNHYyaDJ2LTJoLTJ6bTAtNHYyaDJ2LTJoLTJ6Ii8+PC9nPjwvZz48L3N2Zz4=')] opacity-40" />
         <div className="relative mx-auto max-w-7xl px-4 py-20 sm:px-6 sm:py-28">
           <div className="mx-auto max-w-3xl text-center">
-            <div className="mb-6 inline-flex items-center gap-2 rounded-full glass-card px-4 py-1.5 text-sm text-white/80">
-              <BarChart3 className="h-4 w-4 text-primary" />
+            <div className="mb-6 inline-flex items-center gap-2 rounded-full glass-card px-4 py-1.5 text-sm text-market-muted">
+              <BarChart3 className="h-4 w-4 text-market-up" />
+              <span className="market-pulse-dot" />
               Smart portfolio analysis for Indian investors
             </div>
 
-            <h1 className="text-4xl font-bold tracking-tight text-white sm:text-5xl lg:text-6xl">
+            <h1 className="text-4xl font-bold tracking-tight text-market-text sm:text-5xl lg:text-6xl">
               Understand your portfolio.
               <br />
-              <span className="text-primary">Invest smarter.</span>
+              <span className="text-market-up">Invest smarter.</span>
             </h1>
 
-            <p className="mt-6 text-lg text-white/70 leading-relaxed">
+            <p className="mt-6 text-lg text-market-muted leading-relaxed">
               Upload holdings from CDSL, NSDL, or any broker. Get instant analysis
               with benchmark comparisons, sector allocation, momentum signals, and
               personalized rebalancing suggestions.
@@ -80,16 +81,22 @@ export default async function HomePage() {
                   <ArrowRight className="h-4 w-4" />
                 </Button>
               </Link>
+              <Link href="/markets">
+                <Button variant="outline" size="lg" className="w-full sm:w-auto">
+                  <LineChart className="h-4 w-4" />
+                  Live Markets
+                </Button>
+              </Link>
               {!session && (
                 <Link href="/signup">
-                  <Button variant="outline" size="lg" className="w-full border-white/20 bg-white/10 text-white hover:bg-white/20 sm:w-auto">
+                  <Button variant="outline" size="lg" className="w-full sm:w-auto">
                     Create Free Account
                   </Button>
                 </Link>
               )}
               {session && (
                 <Link href="/dashboard">
-                  <Button variant="outline" size="lg" className="w-full border-white/20 bg-white/10 text-white hover:bg-white/20 sm:w-auto">
+                  <Button variant="outline" size="lg" className="w-full sm:w-auto">
                     Go to Dashboard
                     <ArrowRight className="h-4 w-4" />
                   </Button>
@@ -97,7 +104,7 @@ export default async function HomePage() {
               )}
             </div>
 
-            <p className="mt-4 text-xs text-white/50">
+            <p className="mt-4 text-xs text-market-muted">
               Free basic analysis without login. Sign up for momentum, fundamentals & smart suggestions.
             </p>
           </div>
@@ -105,13 +112,13 @@ export default async function HomePage() {
           {/* Stats */}
           <div className="mx-auto mt-16 grid max-w-2xl grid-cols-3 gap-6">
             {[
-              { value: "15+", label: "NIFTY stocks tracked" },
+              { value: "Live", label: "NSE/BSE market data" },
               { value: "3", label: "CSV formats supported" },
               { value: "Free", label: "Basic analysis" },
             ].map((stat) => (
               <div key={stat.label} className="text-center">
-                <p className="text-2xl font-bold text-primary">{stat.value}</p>
-                <p className="mt-1 text-xs text-white/60">{stat.label}</p>
+                <p className="text-2xl font-bold text-market-up">{stat.value}</p>
+                <p className="mt-1 text-xs text-market-muted">{stat.label}</p>
               </div>
             ))}
           </div>

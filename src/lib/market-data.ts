@@ -298,24 +298,197 @@ export function getStockData(symbol: string): StockFundamentals | null {
   return STOCK_DATABASE[normalized] || null;
 }
 
-export function enrichHolding(symbol: string, avgPrice: number) {
-  const stock = getStockData(symbol);
+function deriveMomentum(yearReturn: number): Pick<StockFundamentals, "momentumScore" | "trend"> {
+  const momentumScore = Math.min(100, Math.max(0, Math.round(50 + yearReturn * 2)));
+  const trend: StockFundamentals["trend"] =
+    yearReturn > 10 ? "bullish" : yearReturn < -5 ? "bearish" : "neutral";
+  return { momentumScore, trend };
+}
+
+function mergeWithLiveQuote(
+  staticStock: StockFundamentals,
+  livePrice: number,
+  yearReturn: number | null
+): StockFundamentals {
+  const momentum = yearReturn != null ? deriveMomentum(yearReturn) : {};
+  return {
+    ...staticStock,
+    currentPrice: livePrice,
+    ...(yearReturn != null ? { yearReturn, ...momentum } : {}),
+  };
+}
+
+export interface EnrichedHoldingData {
+  symbol: string;
+  name: string;
+  sector: string;
+  currentPrice: number;
+  fundamentals: StockFundamentals | null;
+}
+
+/** Sync fallback — prefer static reference price over avgPrice so P&L isn't falsely 0%. */
+export function enrichHolding(symbol: string, avgPrice: number): EnrichedHoldingData {
+  const normalized = symbol.toUpperCase().replace(/\.(NS|BO|NSE|BSE)$/i, "");
+  const stock = getStockData(normalized);
+  const fallbackPrice = stock?.currentPrice ?? avgPrice;
+
   if (stock) {
     return {
       symbol: stock.symbol,
       name: stock.name,
       sector: stock.sector,
-      currentPrice: stock.currentPrice,
-      fundamentals: stock,
+      currentPrice: fallbackPrice,
+      fundamentals: { ...stock, currentPrice: fallbackPrice },
     };
   }
-  // Fallback for unknown symbols
-  const estimatedPrice = avgPrice * (1 + (Math.random() * 0.3 - 0.1));
   return {
-    symbol: symbol.toUpperCase(),
-    name: symbol.toUpperCase(),
+    symbol: normalized,
+    name: normalized,
     sector: "Unknown",
-    currentPrice: Math.round(estimatedPrice * 100) / 100,
+    currentPrice: fallbackPrice,
     fundamentals: null,
   };
+}
+
+/** Fetch live NSE prices from Yahoo Finance, with static fundamentals as fallback. */
+export async function enrichHoldingAsync(
+  symbol: string,
+  avgPrice: number,
+  liveQuotes?: Map<string, import("./yahoo-finance").YahooQuote>
+): Promise<EnrichedHoldingData> {
+  const normalized = symbol.toUpperCase().replace(/\.(NS|BO|NSE|BSE)$/i, "");
+  const staticStock = getStockData(normalized);
+
+  const { toYahooSymbol, fetchQuotes, fetchYearReturn } = await import("./yahoo-finance");
+  const yahooSymbol = toYahooSymbol(normalized);
+
+  let quote = liveQuotes?.get(yahooSymbol);
+  if (!quote) {
+    try {
+      const quotes = await fetchQuotes([yahooSymbol]);
+      quote = quotes[0];
+    } catch {
+      return enrichHolding(symbol, avgPrice);
+    }
+  }
+
+  if (!quote) return enrichHolding(symbol, avgPrice);
+
+  let yearReturn: number | null = null;
+  try {
+    yearReturn = await fetchYearReturn(yahooSymbol);
+  } catch {
+    // keep static year return if chart fetch fails
+  }
+
+  if (staticStock) {
+    const fundamentals = mergeWithLiveQuote(staticStock, quote.price, yearReturn);
+    return {
+      symbol: staticStock.symbol,
+      name: staticStock.name,
+      sector: staticStock.sector,
+      currentPrice: quote.price,
+      fundamentals,
+    };
+  }
+
+  const momentum = yearReturn != null ? deriveMomentum(yearReturn) : { momentumScore: 50, trend: "neutral" as const };
+  const fundamentals: StockFundamentals = {
+    symbol: normalized,
+    name: quote.name,
+    sector: "Unknown",
+    currentPrice: quote.price,
+    pe: 0,
+    pb: 0,
+    roe: 0,
+    debtToEquity: 0,
+    revenueGrowth: 0,
+    profitGrowth: 0,
+    dividendYield: 0,
+    marketCap: 0,
+    yearReturn: yearReturn ?? 0,
+    ...momentum,
+  };
+
+  return {
+    symbol: normalized,
+    name: quote.name,
+    sector: "Unknown",
+    currentPrice: quote.price,
+    fundamentals,
+  };
+}
+
+export async function enrichHoldingsBatch(
+  holdings: Array<{ symbol: string; avgPrice: number }>
+): Promise<EnrichedHoldingData[]> {
+  const { toYahooSymbol, fetchQuotes } = await import("./yahoo-finance");
+
+  const yahooSymbols = holdings.map((h) => toYahooSymbol(h.symbol));
+  let quoteMap = new Map<string, import("./yahoo-finance").YahooQuote>();
+
+  try {
+    const quotes = await fetchQuotes(yahooSymbols);
+    quoteMap = new Map(quotes.map((q) => [q.yahooSymbol, q]));
+  } catch (err) {
+    console.error("Batch quote fetch failed:", err);
+  }
+
+  const results = await Promise.all(
+    holdings.map(async (h) => {
+      const yahooSymbol = toYahooSymbol(h.symbol);
+      if (!quoteMap.has(yahooSymbol)) {
+        try {
+          const single = await fetchQuotes([yahooSymbol]);
+          if (single[0]) quoteMap.set(yahooSymbol, single[0]);
+        } catch {
+          // fall through to enrichHolding fallback
+        }
+      }
+      return enrichHoldingAsync(h.symbol, h.avgPrice, quoteMap);
+    })
+  );
+
+  return results;
+}
+
+export interface LiveBenchmarks {
+  nifty50: { name: string; yearReturn: number };
+  sensex: { name: string; yearReturn: number };
+}
+
+let benchmarkCache: { data: LiveBenchmarks; fetchedAt: number } | null = null;
+
+export async function getLiveBenchmarks(): Promise<LiveBenchmarks> {
+  if (benchmarkCache && Date.now() - benchmarkCache.fetchedAt < 15 * 60 * 1000) {
+    return benchmarkCache.data;
+  }
+
+  const { BENCHMARK_SYMBOLS, fetchYearReturn } = await import("./yahoo-finance");
+
+  try {
+    const [niftyReturn, sensexReturn] = await Promise.all([
+      fetchYearReturn(BENCHMARK_SYMBOLS.nifty50),
+      fetchYearReturn(BENCHMARK_SYMBOLS.sensex),
+    ]);
+
+    const data: LiveBenchmarks = {
+      nifty50: {
+        name: BENCHMARKS.nifty50.name,
+        yearReturn: niftyReturn ?? BENCHMARKS.nifty50.yearReturn,
+      },
+      sensex: {
+        name: BENCHMARKS.sensex.name,
+        yearReturn: sensexReturn ?? BENCHMARKS.sensex.yearReturn,
+      },
+    };
+
+    benchmarkCache = { data, fetchedAt: Date.now() };
+    return data;
+  } catch {
+    return {
+      nifty50: { name: BENCHMARKS.nifty50.name, yearReturn: BENCHMARKS.nifty50.yearReturn },
+      sensex: { name: BENCHMARKS.sensex.name, yearReturn: BENCHMARKS.sensex.yearReturn },
+    };
+  }
 }
