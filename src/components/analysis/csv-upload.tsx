@@ -1,12 +1,13 @@
 "use client";
 
-import { useCallback, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { Upload, FileSpreadsheet, AlertCircle, CheckCircle2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 interface CsvUploadProps {
   onUpload: (content: string, fileName: string) => void;
   loading?: boolean;
+  initialFileName?: string | null;
 }
 
 const ACCEPTED_TYPES = [
@@ -40,10 +41,14 @@ async function readFileAsText(file: File): Promise<string> {
   return utf16;
 }
 
-export function CsvUpload({ onUpload, loading }: CsvUploadProps) {
+export function CsvUpload({ onUpload, loading, initialFileName }: CsvUploadProps) {
   const [dragOver, setDragOver] = useState(false);
-  const [fileName, setFileName] = useState<string | null>(null);
+  const [fileName, setFileName] = useState<string | null>(initialFileName ?? null);
   const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (initialFileName) setFileName(initialFileName);
+  }, [initialFileName]);
 
   const handleFile = useCallback(
     async (file: File) => {

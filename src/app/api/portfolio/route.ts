@@ -28,7 +28,7 @@ export async function POST(req: NextRequest) {
 
   try {
     const body = await req.json();
-    const { csvContent, name } = body;
+    const { csvContent, name, fileName } = body;
 
     if (!csvContent) {
       return NextResponse.json({ error: "CSV content is required" }, { status: 400 });
@@ -43,9 +43,16 @@ export async function POST(req: NextRequest) {
       holdings.map((h) => ({ symbol: h.symbol, avgPrice: h.avgPrice }))
     );
 
+    const defaultName = `Portfolio - ${new Date().toLocaleDateString("en-IN")}`;
+    const portfolioName =
+      name ||
+      (typeof fileName === "string"
+        ? fileName.replace(/\.(csv|txt)$/i, "").trim() || defaultName
+        : defaultName);
+
     const portfolio = await prisma.portfolio.create({
       data: {
-        name: name || `Portfolio - ${new Date().toLocaleDateString("en-IN")}`,
+        name: portfolioName,
         source,
         userId: session.id,
         holdings: {
