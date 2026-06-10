@@ -58,7 +58,7 @@ export default async function HomePage() {
             <div className="mb-6 inline-flex items-center gap-2 rounded-full glass-card px-4 py-1.5 text-sm text-market-muted">
               <BarChart3 className="h-4 w-4 text-market-up" />
               <span className="market-pulse-dot" />
-              Smart portfolio analysis for Indian investors
+              Investor's one stop solution for smart portfolio analysis.
             </div>
 
             <h1 className="text-4xl font-bold tracking-tight text-market-text sm:text-5xl lg:text-6xl">
@@ -68,8 +68,8 @@ export default async function HomePage() {
             </h1>
 
             <p className="mt-6 text-lg text-market-muted leading-relaxed">
-              Upload holdings from CDSL, NSDL, or any broker. Get instant analysis
-              with benchmark comparisons, sector allocation, momentum signals, and
+              Upload holdings from CDSL or NSDL, or your broker. Get instant analysis
+              with benchmark comparisons, sector allocation, momentum signals and
               personalized rebalancing suggestions.
             </p>
 
@@ -77,7 +77,7 @@ export default async function HomePage() {
               <Link href="/analyze">
                 <Button size="lg" className="w-full sm:w-auto">
                   <Upload className="h-4 w-4" />
-                  Analyze CSV — No signup needed
+                  Analyze Your Holdings
                   <ArrowRight className="h-4 w-4" />
                 </Button>
               </Link>
@@ -105,7 +105,7 @@ export default async function HomePage() {
             </div>
 
             <p className="mt-4 text-xs text-market-muted">
-              Free basic analysis without login. Sign up for momentum, fundamentals & smart suggestions.
+              Sign up for momentum, fundamentals & smart suggestions.
             </p>
           </div>
 
@@ -113,7 +113,7 @@ export default async function HomePage() {
           <div className="mx-auto mt-16 grid max-w-2xl grid-cols-3 gap-6">
             {[
               { value: "Live", label: "NSE/BSE market data" },
-              { value: "3", label: "CSV formats supported" },
+              { value: "24/7", label: "Support" },
               { value: "Free", label: "Basic analysis" },
             ].map((stat) => (
               <div key={stat.label} className="text-center">
