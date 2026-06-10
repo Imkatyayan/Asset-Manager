@@ -176,12 +176,12 @@ export default async function HomePage() {
 
       {/* CTA */}
       <section className="mx-auto max-w-7xl px-4 py-20 sm:px-6">
-        <div className="rounded-2xl gradient-hero p-8 text-center sm:p-12">
-          <h2 className="text-2xl font-bold text-white sm:text-3xl">
-            Ready to analyze your portfolio?
+        <div className="rounded-2xl p-8 text-center sm:p-12">
+          <h2 className="text-2xl font-bold text-market-text sm:text-3xl">
+            Ready to analyze your Holdings?
           </h2>
-          <p className="mt-3 text-white/70">
-            No signup required for basic analysis. Upload your CSV and get started in seconds.
+          <p className="mt-3 text-market-muted">
+            No signup required for basic analysis. Upload your Holdings and get started in seconds.
           </p>
           <Link href="/analyze" className="mt-6 inline-block">
             <Button size="lg">

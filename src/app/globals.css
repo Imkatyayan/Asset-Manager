@@ -98,7 +98,7 @@
     overflow: hidden;
   }
 
-  .gradient-hero::before {
+  /* .gradient-hero::before {
     content: "";
     position: absolute;
     inset: 0;
@@ -109,7 +109,7 @@
     opacity: 0.4;
     animation: grid-drift 20s linear infinite;
     pointer-events: none;
-  }
+  } */
 
   .glass-card {
     background: var(--glass-bg);
