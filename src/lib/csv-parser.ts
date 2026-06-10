@@ -5,6 +5,10 @@ export interface ParsedHolding {
   name: string;
   quantity: number;
   avgPrice: number;
+  /** Per-share last traded price from the CSV, when present */
+  csvLtp?: number;
+  /** Total current/market value from the CSV, when present */
+  csvCurrentValue?: number;
 }
 
 export interface ParseResult {
@@ -75,8 +79,6 @@ const AVG_PRICE_KEYS = [
   "buy avg",
   "purchase rate",
   "average_price",
-  "price",
-  "rate",
 ];
 
 const LTP_KEYS = [
@@ -90,15 +92,23 @@ const LTP_KEYS = [
   "last",
 ];
 
-const VALUE_KEYS = [
-  "current value",
-  "market value",
-  "value",
+const INVESTED_VALUE_KEYS = [
   "invested amount",
   "invested value",
+  "investment amount",
+  "cost value",
+  "amount invested",
+  "total invested",
+];
+
+const CURRENT_VALUE_KEYS = [
+  "current value",
+  "market value",
+  "present value",
   "total value",
   "holding value",
-  "amount",
+  "portfolio value",
+  "value",
 ];
 
 const COMPANY_TO_SYMBOL: Record<string, string> = {
@@ -144,8 +154,36 @@ function normalizeKey(key: string): string {
     .replace(/\s+/g, " ");
 }
 
-function findColumn(headers: string[], candidates: string[]): string | null {
-  const normalized = headers.map((h) => ({ original: h, norm: normalizeKey(h) }));
+function isLikelyLtpHeader(header: string): boolean {
+  const norm = normalizeKey(header);
+  if (
+    norm.includes("avg") ||
+    norm.includes("average") ||
+    norm.includes("buy") ||
+    norm.includes("purchase") ||
+    norm.includes("cost")
+  ) {
+    return false;
+  }
+  return (
+    norm.includes("ltp") ||
+    norm.includes("last") ||
+    norm.includes("current") ||
+    norm.includes("market") ||
+    norm.includes("close") ||
+    norm.includes("closing")
+  );
+}
+
+function findColumn(
+  headers: string[],
+  candidates: string[],
+  options?: { exclude?: string[]; skipHeader?: (header: string) => boolean }
+): string | null {
+  const exclude = new Set(options?.exclude ?? []);
+  const normalized = headers
+    .map((h) => ({ original: h, norm: normalizeKey(h) }))
+    .filter((h) => !exclude.has(h.original) && !options?.skipHeader?.(h.original));
 
   // Exact match first
   for (const candidate of candidates) {
@@ -261,7 +299,8 @@ function scoreHeaderLine(line: string): number {
     ...QTY_KEYS,
     ...AVG_PRICE_KEYS,
     ...LTP_KEYS,
-    ...VALUE_KEYS,
+    ...INVESTED_VALUE_KEYS,
+    ...CURRENT_VALUE_KEYS,
   ];
 
   for (const part of parts) {
@@ -373,9 +412,16 @@ export function parseHoldingsCSV(rawContent: string): ParseResult {
   const nameCol = findColumn(headers, NAME_KEYS);
   const isinCol = findColumn(headers, ISIN_KEYS);
   const qtyCol = findColumn(headers, QTY_KEYS);
-  const avgPriceCol = findColumn(headers, AVG_PRICE_KEYS);
-  const ltpCol = findColumn(headers, LTP_KEYS);
-  const valueCol = findColumn(headers, VALUE_KEYS);
+  const avgPriceCol = findColumn(headers, AVG_PRICE_KEYS, {
+    skipHeader: isLikelyLtpHeader,
+  });
+  const ltpCol = findColumn(headers, LTP_KEYS, {
+    exclude: avgPriceCol ? [avgPriceCol] : [],
+  });
+  const investedValueCol = findColumn(headers, INVESTED_VALUE_KEYS);
+  const currentValueCol = findColumn(headers, CURRENT_VALUE_KEYS, {
+    exclude: investedValueCol ? [investedValueCol] : [],
+  });
 
   // Don't reuse the same column as both avg price and LTP
   const effectiveLtpCol = ltpCol && ltpCol !== avgPriceCol ? ltpCol : null;
@@ -387,7 +433,10 @@ export function parseHoldingsCSV(rawContent: string): ParseResult {
     quantity: qtyCol,
     avgPrice: avgPriceCol,
     ltp: effectiveLtpCol,
-    value: valueCol,
+    investedValue: investedValueCol,
+    currentValue: currentValueCol,
+    // Back-compat alias for the primary value column (invested preferred)
+    value: investedValueCol ?? currentValueCol,
   };
 
   if (!qtyCol && !symbolCol && !nameCol && !isinCol) {
@@ -419,36 +468,45 @@ export function parseHoldingsCSV(rawContent: string): ParseResult {
 
     let avgPrice = avgPriceCol ? parseNumber(row[avgPriceCol]) : 0;
     const ltp = effectiveLtpCol ? parseNumber(row[effectiveLtpCol]) : 0;
-    const totalValue = valueCol ? parseNumber(row[valueCol]) : 0;
+    const investedTotal = investedValueCol ? parseNumber(row[investedValueCol]) : 0;
+    const currentTotal = currentValueCol ? parseNumber(row[currentValueCol]) : 0;
 
-    // Derive avg price from available data
-    if (avgPrice <= 0 && totalValue > 0 && quantity > 0) {
-      const colNorm = valueCol ? normalizeKey(valueCol) : "";
-      if (colNorm.includes("invested") || colNorm.includes("cost")) {
-        avgPrice = totalValue / quantity;
-      } else if (colNorm.includes("current") || colNorm.includes("market")) {
-        // Market value column — don't use as cost basis; derive from invested if possible
-        if (ltp <= 0) {
-          errors.push(
-            `Row ${symbol}: only market value found — add Avg Buy Price for accurate P&L`
-          );
-        }
-      } else {
-        avgPrice = totalValue / quantity;
+    // Derive cost basis from invested amount when avg price column is missing
+    if (avgPrice <= 0 && investedTotal > 0 && quantity > 0) {
+      avgPrice = investedTotal / quantity;
+    }
+
+    let csvLtp = ltp > 0 ? ltp : undefined;
+    let csvCurrentValue = currentTotal > 0 ? currentTotal : undefined;
+
+    if (!csvLtp && csvCurrentValue && quantity > 0) {
+      csvLtp = csvCurrentValue / quantity;
+    }
+    if (!csvCurrentValue && csvLtp && quantity > 0) {
+      csvCurrentValue = csvLtp * quantity;
+    }
+
+    if (avgPrice <= 0 && !investedValueCol && !avgPriceCol) {
+      if (csvCurrentValue || csvLtp) {
+        errors.push(
+          `Row ${symbol}: no cost basis found — add Avg Buy Price or Invested Amount for accurate P&L`
+        );
       }
     }
 
-    if (avgPrice <= 0 && ltp > 0 && !avgPriceCol) {
-      // No cost basis column — flag but allow analysis with live prices only
-      avgPrice = ltp;
-    }
-
     if (avgPrice <= 0) {
-      // Last resort: skip or use placeholder — but log warning once
+      // Last resort placeholder when no cost basis is available
       avgPrice = 100;
     }
 
-    holdings.push({ symbol, name, quantity, avgPrice });
+    holdings.push({
+      symbol,
+      name,
+      quantity,
+      avgPrice,
+      ...(csvLtp ? { csvLtp } : {}),
+      ...(csvCurrentValue ? { csvCurrentValue } : {}),
+    });
   }
 
   if (holdings.length === 0) {

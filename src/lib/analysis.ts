@@ -82,12 +82,25 @@ const SECTOR_COLORS: Record<string, string> = {
   Unknown: "#9E9E9E",
 };
 
+function resolveCurrentPrice(
+  h: ParsedHolding,
+  livePrice: number
+): number {
+  if (h.csvLtp && h.csvLtp > 0) return h.csvLtp;
+  if (h.csvCurrentValue && h.quantity > 0) return h.csvCurrentValue / h.quantity;
+  return livePrice;
+}
+
 function mapEnrichedHolding(
   h: ParsedHolding,
   enriched: Awaited<ReturnType<typeof enrichHoldingsBatch>>[number]
 ): EnrichedHolding {
   const invested = h.quantity * h.avgPrice;
-  const currentValue = h.quantity * enriched.currentPrice;
+  const currentPrice = resolveCurrentPrice(h, enriched.currentPrice);
+  const currentValue =
+    h.csvCurrentValue && h.csvCurrentValue > 0
+      ? h.csvCurrentValue
+      : h.quantity * currentPrice;
   const returns = currentValue - invested;
   const returnsPercent = invested > 0 ? (returns / invested) * 100 : 0;
 
@@ -96,7 +109,7 @@ function mapEnrichedHolding(
     name: enriched.name,
     quantity: h.quantity,
     avgPrice: h.avgPrice,
-    currentPrice: enriched.currentPrice,
+    currentPrice,
     invested,
     currentValue,
     returns,
