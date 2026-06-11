@@ -54,7 +54,7 @@ export default function SignupPage() {
     <div className="flex min-h-[calc(100vh-4rem)] items-center justify-center px-4 py-12">
       <div className="grid w-full max-w-4xl gap-8 lg:grid-cols-2">
         <div className="hidden lg:block">
-          <h2 className="text-2xl font-bold text-text-primary">
+          <h2 className="text-2xl font-bold">
             Unlock the full power of PortfolioIQ
           </h2>
           <p className="mt-2 text-text-secondary">
@@ -78,7 +78,7 @@ export default function SignupPage() {
               <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-xl gradient-primary">
                 <BarChart3 className="h-6 w-6 text-white" />
               </div>
-              <h1 className="mt-4 text-2xl font-bold text-text-primary">Create account</h1>
+              <h1 className="mt-4 text-2xl font-bold">Create account</h1>
               <p className="mt-1 text-sm text-text-secondary">Free forever. No credit card needed.</p>
             </div>
 

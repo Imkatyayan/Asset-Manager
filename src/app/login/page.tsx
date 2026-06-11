@@ -50,7 +50,7 @@ export default function LoginPage() {
             <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-xl gradient-primary">
               <BarChart3 className="h-6 w-6 text-white" />
             </div>
-            <h1 className="mt-4 text-2xl font-bold text-text-primary">Welcome back</h1>
+            <h1 className="mt-4 text-2xl font-bold">Welcome back</h1>
             <p className="mt-1 text-sm text-text-secondary">
               Login to access your portfolio dashboard
             </p>
