@@ -15,33 +15,18 @@ export interface StoredAnalysisSession {
   savedAt: number;
 }
 
-const STORAGE_KEY = "portfolioiq-analysis-session";
+// In-memory only — survives tab switching but clears on refresh/close.
+// Intentionally not persisted to sessionStorage or localStorage.
+let _session: StoredAnalysisSession | null = null;
 
 export function loadAnalysisSession(): StoredAnalysisSession | null {
-  if (typeof window === "undefined") return null;
-
-  try {
-    const raw = sessionStorage.getItem(STORAGE_KEY);
-    if (!raw) return null;
-    const parsed = JSON.parse(raw) as StoredAnalysisSession;
-    if (!parsed?.result?.analysis || !parsed.fileName) return null;
-    return parsed;
-  } catch {
-    return null;
-  }
+  return _session;
 }
 
 export function saveAnalysisSession(session: StoredAnalysisSession): void {
-  if (typeof window === "undefined") return;
-
-  try {
-    sessionStorage.setItem(STORAGE_KEY, JSON.stringify(session));
-  } catch {
-    // sessionStorage full or unavailable — analysis still works for this visit
-  }
+  _session = session;
 }
 
 export function clearAnalysisSession(): void {
-  if (typeof window === "undefined") return;
-  sessionStorage.removeItem(STORAGE_KEY);
+  _session = null;
 }
