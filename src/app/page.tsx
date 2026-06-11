@@ -8,6 +8,9 @@ import {
   TrendingUp,
   PieChart,
   LineChart,
+  Lock,
+  Star,
+  CheckCircle2,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { getSession } from "@/lib/auth";
@@ -48,8 +51,25 @@ export default async function HomePage() {
     },
   ];
 
+  const freeFeatures = [
+    "CSV upload (any broker)",
+    "P&L summary",
+    "Sector allocation chart",
+    "NIFTY 50 & Sensex comparison",
+    "Basic rebalancing tips",
+  ];
+
+  const proFeatures = [
+    "Everything in Free",
+    "Momentum score per stock",
+    "P/E, ROE, debt ratio analysis",
+    "Smart diversification suggestions",
+    "Save & track multiple portfolios",
+    "Portfolio health score",
+  ];
+
   return (
-  <div>
+    <div>
       {/* Hero */}
       <section className="gradient-hero relative overflow-hidden">
         <div className="absolute inset-0 bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNjAiIGhlaWdodD0iNjAiIHZpZXdCb3g9IjAgMCA2MCA2MCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48ZyBmaWxsPSJub25lIiBmaWxsLXJ1bGU9ImV2ZW5vZGQiPjxnIGZpbGw9IiNmZmYiIGZpbGwtb3BhY2l0eT0iMC4wMyI+PHBhdGggZD0iTTM2IDM0djItaDJ2LTJoLTJ6bTAtNHYyaDJ2LTJoLTJ6bTAtNHYyaDJ2LTJoLTJ6bTAtNHYyaDJ2LTJoLTJ6Ii8+PC9nPjwvZz48L3N2Zz4=')] opacity-40" />
@@ -170,6 +190,83 @@ export default async function HomePage() {
                 <p className="mt-1.5 text-xs text-market-muted leading-relaxed">{item.description}</p>
               </div>
             ))}
+          </div>
+        </div>
+      </section>
+
+      {/* Free vs Pro */}
+      <section className="border-t border-market-border bg-market-surface">
+        <div className="mx-auto max-w-7xl px-4 py-16 sm:px-6">
+          <div className="text-center mb-10">
+            <h2 className="text-2xl font-bold text-market-text">Free vs Pro</h2>
+            <p className="mt-2 text-sm text-market-muted">Start free. Upgrade when you need deeper insights.</p>
+          </div>
+          <div className="grid gap-4 sm:grid-cols-2 max-w-3xl mx-auto">
+            {/* Free */}
+            <div className="market-panel p-6">
+              <div className="flex items-center gap-2 mb-4">
+                <div className="h-8 w-8 rounded-md bg-market-surface flex items-center justify-center">
+                  <BarChart3 className="h-4 w-4 text-market-muted" />
+                </div>
+                <div>
+                  <p className="text-sm font-bold text-market-text">Guest / Free</p>
+                  <p className="text-xs text-market-muted">No signup needed</p>
+                </div>
+              </div>
+              <ul className="space-y-2.5">
+                {freeFeatures.map((f) => (
+                  <li key={f} className="flex items-center gap-2 text-xs text-market-muted">
+                    <CheckCircle2 className="h-3.5 w-3.5 text-market-up shrink-0" />
+                    {f}
+                  </li>
+                ))}
+              </ul>
+              <Link href="/analyze" className="mt-5 block">
+                <Button variant="outline" size="sm" className="w-full">
+                  Try free
+                </Button>
+              </Link>
+            </div>
+            {/* Pro */}
+            <div className="market-panel p-6 border-market-up/30 relative overflow-hidden">
+              <div className="absolute top-3 right-3">
+                <span className="inline-flex items-center gap-1 rounded-full bg-market-up/10 border border-market-up/20 px-2 py-0.5 text-[10px] font-semibold text-market-up">
+                  <Star className="h-2.5 w-2.5" /> PRO
+                </span>
+              </div>
+              <div className="flex items-center gap-2 mb-4">
+                <div className="h-8 w-8 rounded-md bg-market-up/10 border border-market-up/20 flex items-center justify-center">
+                  <Lock className="h-4 w-4 text-market-up" />
+                </div>
+                <div>
+                  <p className="text-sm font-bold text-market-text">Pro Account</p>
+                  <p className="text-xs text-market-muted">Free to sign up</p>
+                </div>
+              </div>
+              <ul className="space-y-2.5">
+                {proFeatures.map((f) => (
+                  <li key={f} className="flex items-center gap-2 text-xs text-market-muted">
+                    <CheckCircle2 className="h-3.5 w-3.5 text-market-up shrink-0" />
+                    {f}
+                  </li>
+                ))}
+              </ul>
+              {!session ? (
+                <Link href="/signup" className="mt-5 block">
+                  <Button size="sm" className="w-full">
+                    Create free account
+                    <ArrowRight className="h-3.5 w-3.5" />
+                  </Button>
+                </Link>
+              ) : (
+                <Link href="/dashboard" className="mt-5 block">
+                  <Button size="sm" className="w-full">
+                    Go to dashboard
+                    <ArrowRight className="h-3.5 w-3.5" />
+                  </Button>
+                </Link>
+              )}
+            </div>
           </div>
         </div>
       </section>
