@@ -51,7 +51,7 @@ export default function SupportPage() {
         <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-primary-light">
           <HelpCircle className="h-7 w-7 text-primary" />
         </div>
-        <h1 className="mt-4 text-2xl font-bold text-text-primary">Help & Support</h1>
+        <h1 className="mt-4 text-2xl font-bold">Help & Support</h1>
         <p className="mt-2 text-text-secondary">
           Everything you need to get started with PortfolioIQ
         </p>

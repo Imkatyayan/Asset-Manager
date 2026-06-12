@@ -145,28 +145,34 @@ export default async function HomePage() {
         </div>
       </section>
 
-      {/* Features */}
-      <section className="mx-auto max-w-7xl px-4 py-16 sm:px-6">
-        <div className="text-center">
-          <h2 className="text-2xl font-bold text-market-text">
-            Built like a broker terminal
+      {/* FEATURES */}
+      <section className="mx-auto max-w-7xl px-4 py-20 sm:px-6">
+
+        <div className="text-center mb-12">
+          <h2 className="text-3xl font-semibold">
+            Built for serious investors
           </h2>
-          <p className="mt-2 text-market-muted">
-            Kite & Groww inspired · Made for Indian retail investors
+          <p className="mt-3 text-market-muted">
+            Institutional-grade insights simplified for retail investors
           </p>
         </div>
 
-        <div className="mt-10 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-          {features.map((feature) => (
+        <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
+          {features.map((f, i) => (
             <div
-              key={feature.title}
-              className="group market-panel p-5 transition-all hover:border-market-up/30"
+              key={f.title}
+              className="group border border-market-border bg-market-card rounded-2xl p-6 hover:border-market-up/30 hover:-translate-y-1 transition-all duration-300"
+              style={{ animationDelay: `${i * 60}ms` }}
             >
-              <div className="flex h-10 w-10 items-center justify-center rounded-md bg-market-surface">
-                <feature.icon className="h-5 w-5 text-market-up" />
+              <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-market-surface group-hover:bg-market-up/10 transition">
+                <f.icon className="h-5 w-5 text-market-up" />
               </div>
-              <h3 className="mt-3 text-sm font-semibold text-market-text">{feature.title}</h3>
-              <p className="mt-1.5 text-xs text-market-muted leading-relaxed">{feature.description}</p>
+
+              <h3 className="mt-4 font-semibold">{f.title}</h3>
+
+              <p className="mt-2 text-sm text-market-muted leading-relaxed">
+                {f.description}
+              </p>
             </div>
           ))}
         </div>
