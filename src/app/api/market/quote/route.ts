@@ -3,7 +3,7 @@ import { fetchQuoteDetail, type ChartRange } from "@/lib/yahoo-finance";
 
 export const dynamic = "force-dynamic";
 
-const VALID_RANGES = new Set(["1d", "5d", "1mo", "3mo", "6mo", "1y"]);
+const VALID_RANGES = new Set(["1d", "5d", "1mo", "3mo", "6mo", "1y", "5y", "max"]);
 
 export async function GET(req: NextRequest) {
   const symbol = req.nextUrl.searchParams.get("symbol")?.trim();

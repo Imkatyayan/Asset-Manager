@@ -239,24 +239,28 @@ export async function searchSymbols(query: string, limit = 12): Promise<SearchRe
     }));
 }
 
-export type ChartRange = "1d" | "5d" | "1mo" | "3mo" | "6mo" | "1y";
+export type ChartRange = "1d" | "5d" | "1mo" | "3mo" | "6mo" | "1y" | "5y" | "max";
 
 const CHART_RANGE_CONFIG: Record<ChartRange, { range: string; interval: string }> = {
-  "1d": { range: "1d", interval: "5m" },
-  "5d": { range: "5d", interval: "15m" },
-  "1mo": { range: "1mo", interval: "1d" },
-  "3mo": { range: "3mo", interval: "1d" },
-  "6mo": { range: "6mo", interval: "1d" },
-  "1y": { range: "1y", interval: "1d" },
+  "1d":  { range: "1d",  interval: "5m"  },
+  "5d":  { range: "5d",  interval: "15m" },
+  "1mo": { range: "1mo", interval: "1d"  },
+  "3mo": { range: "3mo", interval: "1d"  },
+  "6mo": { range: "6mo", interval: "1d"  },
+  "1y":  { range: "1y",  interval: "1wk" },
+  "5y":  { range: "5y",  interval: "1mo" },
+  "max": { range: "max", interval: "3mo" },
 };
 
 export const CHART_RANGE_LABELS: Record<ChartRange, string> = {
-  "1d": "1D",
-  "5d": "5D",
+  "1d":  "1D",
+  "5d":  "5D",
   "1mo": "1M",
   "3mo": "3M",
   "6mo": "6M",
-  "1y": "1Y",
+  "1y":  "1Y",
+  "5y":  "5Y",
+  "max": "All",
 };
 
 async function fetchChart(
