@@ -47,18 +47,18 @@ export default function SupportPage() {
 
   return (
     <div className="mx-auto max-w-4xl px-4 py-8 sm:px-6">
-      <div className="text-center mb-10">
-        <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-primary-light">
-          <HelpCircle className="h-7 w-7 text-primary" />
+      <div className="text-center mb-12">
+        <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-market-up/10 text-market-up">
+          <HelpCircle className="h-7 w-7" />
         </div>
-        <h1 className="mt-4 text-2xl font-bold">Help & Support</h1>
-        <p className="mt-2 text-text-secondary">
+        <h1 className="mt-4 text-3xl font-bold text-market-text">Help & Support</h1>
+        <p className="mt-2 text-sm text-market-muted max-w-md mx-auto">
           Everything you need to get started with PortfolioIQ
         </p>
       </div>
 
       {/* Quick guides */}
-      <div className="grid gap-4 sm:grid-cols-3 mb-10">
+      <div className="grid gap-5 sm:grid-cols-3 mb-12">
         {[
           {
             icon: Upload,
@@ -75,41 +75,68 @@ export default function SupportPage() {
             title: "View Analysis",
             desc: "Returns, allocation, benchmarks, and suggestions",
           },
-        ].map((guide) => (
-          <Card key={guide.title}>
-            <CardContent className="pt-5 text-center">
-              <guide.icon className="mx-auto h-6 w-6 text-primary" />
-              <h3 className="mt-3 text-sm font-semibold">{guide.title}</h3>
-              <p className="mt-1 text-xs text-text-muted">{guide.desc}</p>
-            </CardContent>
-          </Card>
+        ].map((guide, i) => (
+          <div
+            key={guide.title}
+            className="group border border-market-border bg-market-card rounded-2xl p-6 hover:border-market-up/30 hover:-translate-y-1 transition-all duration-300"
+            style={{ animationDelay: `${i * 60}ms` }}
+          >
+            <div className="mx-auto flex h-11 w-11 items-center justify-center rounded-xl bg-market-surface group-hover:bg-market-up/10 transition mb-4">
+              <guide.icon className="h-5 w-5 text-market-up" />
+            </div>
+            <h3 className="text-sm font-semibold text-center text-market-text">{guide.title}</h3>
+            <p className="mt-2 text-xs text-market-muted text-center leading-relaxed">{guide.desc}</p>
+          </div>
         ))}
       </div>
 
       {/* FAQ */}
-      <div id="faq" className="mb-10">
-        <h2 className="text-lg font-semibold mb-4">Frequently Asked Questions</h2>
-        <div className="space-y-2">
-          {faqs.map((faq, i) => (
-            <div key={i} className="rounded-lg border border-border">
-              <button
-                className="flex w-full items-center justify-between px-5 py-4 text-left"
-                onClick={() => setOpenFaq(openFaq === i ? null : i)}
+      <div id="faq" className="mb-12">
+        <h2 className="text-lg font-semibold mb-5 text-market-text">Frequently Asked Questions</h2>
+        <div className="space-y-3">
+          {faqs.map((faq, i) => {
+            const isOpen = openFaq === i;
+            return (
+              <div
+                key={i}
+                className={`rounded-xl border transition-all duration-300 overflow-hidden ${
+                  isOpen
+                    ? "border-market-up bg-market-up/5 shadow-sm shadow-market-glow-up"
+                    : "border-market-border bg-market-card hover:border-market-border/80 hover:bg-market-surface/40"
+                }`}
               >
-                <span className="text-sm font-medium">{faq.q}</span>
-                <ChevronDown
-                  className={`h-4 w-4 text-text-muted transition-transform ${
-                    openFaq === i ? "rotate-180" : ""
-                  }`}
-                />
-              </button>
-              {openFaq === i && (
-                <div className="border-t border-border px-5 py-4">
-                  <p className="text-sm text-text-secondary leading-relaxed">{faq.a}</p>
+                <button
+                  type="button"
+                  className="flex w-full items-center justify-between px-6 py-4.5 text-left focus:outline-none"
+                  onClick={() => setOpenFaq(isOpen ? null : i)}
+                >
+                  <span className={`text-sm font-medium transition-colors duration-200 ${
+                    isOpen ? "text-market-up font-semibold" : "text-market-text"
+                  }`}>
+                    {faq.q}
+                  </span>
+                  <div className={`flex h-7 w-7 items-center justify-center rounded-full transition-all duration-200 shrink-0 ${
+                    isOpen ? "bg-market-up/20 text-market-up" : "bg-market-surface text-market-muted hover:text-market-text"
+                  }`}>
+                    <ChevronDown
+                      className={`h-4 w-4 transition-transform duration-300 ${
+                        isOpen ? "rotate-180" : ""
+                      }`}
+                    />
+                  </div>
+                </button>
+                <div
+                  className={`transition-all duration-300 ease-in-out ${
+                    isOpen ? "max-h-96 border-t border-market-border/40" : "max-h-0"
+                  } overflow-hidden`}
+                >
+                  <div className="px-6 py-4.5">
+                    <p className="text-sm text-market-muted leading-relaxed">{faq.a}</p>
+                  </div>
                 </div>
-              )}
-            </div>
-          ))}
+              </div>
+            );
+          })}
         </div>
       </div>
 

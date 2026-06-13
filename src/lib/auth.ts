@@ -83,7 +83,7 @@ export async function registerUser(
   });
 
   return {
-    user: { id: user.id, name: user.name, email: user.email },
+    user: { id: user.id, name: user.name || "User", email: user.email },
   };
 }
 
@@ -98,6 +98,6 @@ export async function loginUser(
   if (!valid) return { error: "Invalid email or password" };
 
   return {
-    user: { id: user.id, name: user.name, email: user.email },
+    user: { id: user.id, name: user.name || "User", email: user.email },
   };
 }

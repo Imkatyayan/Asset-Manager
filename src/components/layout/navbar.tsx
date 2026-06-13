@@ -18,17 +18,17 @@ export function Navbar({ user }: NavbarProps) {
 
   const navLinks = user
     ? [
-        { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
-        { href: "/markets", label: "Markets", icon: LineChart },
-        { href: "/portfolio", label: "Holdings", icon: PieChart },
-        { href: "/analyze", label: "Analyze", icon: Upload },
-        { href: "/support", label: "Support", icon: HelpCircle },
-      ]
+      { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
+      { href: "/markets", label: "Markets", icon: LineChart },
+      { href: "/portfolio", label: "Holdings", icon: PieChart },
+      { href: "/analyze", label: "Analyze", icon: Upload },
+      { href: "/support", label: "Support", icon: HelpCircle },
+    ]
     : [
-        { href: "/markets", label: "Markets", icon: LineChart },
-        { href: "/analyze", label: "Analyze", icon: Upload },
-        { href: "/support", label: "Support", icon: HelpCircle },
-      ];
+      { href: "/markets", label: "Markets", icon: LineChart },
+      { href: "/analyze", label: "Analyze", icon: Upload },
+      { href: "/support", label: "Support", icon: HelpCircle },
+    ];
 
   async function handleLogout() {
     await fetch("/api/auth/logout", { method: "POST" });
@@ -38,7 +38,7 @@ export function Navbar({ user }: NavbarProps) {
   return (
     <nav className="sticky top-0 z-50 border-b border-market-border bg-market-surface">
       <div className="mx-auto flex h-14 max-w-7xl items-center justify-between px-4 sm:px-6">
-        <Link href={user ? "/dashboard" : "/"} className="flex items-center gap-2.5">
+        <Link href={user ? "/" : "/"} className="flex items-center gap-2.5">
           <div className="flex h-8 w-8 items-center justify-center rounded-md bg-market-up">
             <BarChart3 className="h-4 w-4 text-white" />
           </div>
@@ -70,9 +70,14 @@ export function Navbar({ user }: NavbarProps) {
           <ThemeToggle />
           {user ? (
             <>
-              <span className="text-xs text-market-muted">
-                <span className="font-medium text-market-text">{user.name.split(" ")[0]}</span>
-              </span>
+              <Link
+                href="/profile"
+                className="text-xs text-market-muted hover:text-market-text transition-colors duration-200"
+              >
+                <span className="font-medium text-market-text hover:text-market-up transition-colors duration-200">
+                  Welcome <strong className="text-market-up font-semibold">{(user.name || "User").split(" ")[0]}</strong>
+                </span>
+              </Link>
               <Button variant="ghost" size="sm" onClick={handleLogout}>
                 <LogOut className="h-3.5 w-3.5" />
               </Button>
