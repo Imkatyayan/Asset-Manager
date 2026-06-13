@@ -4,6 +4,22 @@ import { prisma } from "@/lib/prisma";
 import { parseHoldingsCSV } from "@/lib/csv-parser";
 import { analyzeFull } from "@/lib/analysis";
 import { enrichHoldingsBatch } from "@/lib/market-data";
+import type { ParsedHolding } from "@/lib/csv-parser";
+
+/**
+ * Mirrors the resolveCurrentPrice logic in analysis.ts.
+ * Priority: CSV-stated LTP → CSV current value ÷ qty → live enriched price.
+ * This ensures the value saved to DB matches what /analyze shows.
+ */
+function resolveCurrentPrice(
+  parsed: ParsedHolding,
+  livePrice: number
+): number {
+  if (parsed.csvLtp && parsed.csvLtp > 0) return parsed.csvLtp;
+  if (parsed.csvCurrentValue && parsed.quantity > 0)
+    return parsed.csvCurrentValue / parsed.quantity;
+  return livePrice;
+}
 
 export async function GET() {
   const session = await getSession();
@@ -39,6 +55,7 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: errors[0] || "No holdings found" }, { status: 400 });
     }
 
+    // Enrich to get live prices, sector, and name for any fields the CSV omits.
     const enrichedHoldings = await enrichHoldingsBatch(
       holdings.map((h) => ({ symbol: h.symbol, avgPrice: h.avgPrice }))
     );
@@ -58,12 +75,15 @@ export async function POST(req: NextRequest) {
         holdings: {
           create: holdings.map((h, i) => {
             const enriched = enrichedHoldings[i];
+            // Use the same price-resolution priority as analysis.ts so that
+            // currentPrice stored in DB matches what /analyze displays.
+            const currentPrice = resolveCurrentPrice(h, enriched.currentPrice);
             return {
               symbol: enriched.symbol,
               name: enriched.name,
               quantity: h.quantity,
               avgPrice: h.avgPrice,
-              currentPrice: enriched.currentPrice,
+              currentPrice,
               sector: enriched.sector,
             };
           }),
@@ -72,6 +92,7 @@ export async function POST(req: NextRequest) {
       include: { holdings: true },
     });
 
+    // Run the same full analysis pipeline as /analyze so the response is consistent.
     const analysis = await analyzeFull(holdings);
 
     return NextResponse.json({ portfolio, analysis, warnings: errors });

@@ -3,13 +3,13 @@ import Link from "next/link";
 import { Upload, TrendingUp, PieChart, ArrowRight } from "lucide-react";
 import { getSession } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
-import { analyzeFull } from "@/lib/analysis";
-import { enrichHoldingsBatch } from "@/lib/market-data";
+import { analyzeFull, type FullAnalysis } from "@/lib/analysis";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { PortfolioSummary } from "@/components/analysis/portfolio-summary";
 import { AllocationChart } from "@/components/analysis/allocation-chart";
 import { BenchmarkComparison } from "@/components/analysis/benchmark-comparison";
+import { HoldingsTable } from "@/components/analysis/holdings-table";
 import { FullAnalysisView } from "@/components/analysis/full-analysis";
 import { SuggestionsPanel } from "@/components/analysis/suggestions-panel";
 import { formatCurrency } from "@/lib/utils";
@@ -25,36 +25,34 @@ export default async function DashboardPage() {
   });
 
   const latestPortfolio = portfolios[0];
-  let analysis = null;
-  const portfolioStats: Record<
-    string,
-    { currentValue: number; invested: number }
-  > = {};
 
-  for (const portfolio of portfolios) {
-    if (portfolio.holdings.length === 0) continue;
-    const enriched = await enrichHoldingsBatch(
-      portfolio.holdings.map((h) => ({ symbol: h.symbol, avgPrice: h.avgPrice }))
-    );
-    const invested = portfolio.holdings.reduce(
-      (sum, h) => sum + h.quantity * h.avgPrice,
-      0
-    );
-    const currentValue = portfolio.holdings.reduce(
-      (sum, h, i) => sum + h.quantity * enriched[i].currentPrice,
-      0
-    );
-    portfolioStats[portfolio.id] = { currentValue, invested };
-  }
+  // Compute per-portfolio summary stats from DB values.
+  const portfolioStats = portfolios.map((p) => {
+    let currentValue = 0;
+    let invested = 0;
+    for (const h of p.holdings) {
+      const price = h.currentPrice ?? h.avgPrice;
+      currentValue += h.quantity * price;
+      invested += h.quantity * h.avgPrice;
+    }
+    const returns = invested > 0 ? ((currentValue - invested) / invested) * 100 : null;
+    return { id: p.id, currentValue, invested, returns };
+  });
+  const statsById = Object.fromEntries(portfolioStats.map((s) => [s.id, s]));
 
-  if (latestPortfolio && latestPortfolio.holdings.length > 0) {
-    const holdings = latestPortfolio.holdings.map((h) => ({
+  // Run full analysis on the latest portfolio, passing DB-stored currentPrice
+  // as csvLtp so resolveCurrentPrice uses it directly (same priority as /analyze).
+  let analysis: FullAnalysis | null = null;
+  if (latestPortfolio?.holdings.length) {
+    const parsedHoldings = latestPortfolio.holdings.map((h) => ({
       symbol: h.symbol,
       name: h.name,
       quantity: h.quantity,
       avgPrice: h.avgPrice,
+      csvLtp: h.currentPrice ?? undefined,
+      csvCurrentValue: h.currentPrice ? h.currentPrice * h.quantity : undefined,
     }));
-    analysis = await analyzeFull(holdings);
+    analysis = await analyzeFull(parsedHoldings);
   }
 
   return (
@@ -80,9 +78,7 @@ export default async function DashboardPage() {
             <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-primary-light">
               <Upload className="h-8 w-8 text-primary" />
             </div>
-            <h2 className="mt-4 text-lg font-semibold">
-              No portfolio yet
-            </h2>
+            <h2 className="mt-4 text-lg font-semibold">No portfolio yet</h2>
             <p className="mt-2 text-sm text-text-secondary max-w-md mx-auto">
               Upload your holdings CSV from CDSL, NSDL, or any broker to get started with full analysis.
             </p>
@@ -96,6 +92,7 @@ export default async function DashboardPage() {
         </Card>
       ) : (
         <div className="mt-8 space-y-6">
+          {/* Summary stat cards */}
           <div className="grid gap-4 sm:grid-cols-3">
             <Card>
               <CardContent className="pt-5">
@@ -114,9 +111,7 @@ export default async function DashboardPage() {
                   <PieChart className="h-5 w-5 text-accent" />
                   <div>
                     <p className="text-xs text-text-muted">Holdings</p>
-                    <p className="text-xl font-bold">
-                      {latestPortfolio.holdings.length}
-                    </p>
+                    <p className="text-xl font-bold">{latestPortfolio.holdings.length}</p>
                   </div>
                 </div>
               </CardContent>
@@ -125,17 +120,16 @@ export default async function DashboardPage() {
               <CardContent className="pt-5">
                 <div>
                   <p className="text-xs text-text-muted">Latest Portfolio</p>
-                  <p className="text-sm font-semibold truncate">
-                    {latestPortfolio.name}
-                  </p>
+                  <p className="text-sm font-semibold truncate">{latestPortfolio.name}</p>
                   <p className="text-xs text-text-muted">
-                    {analysis ? formatCurrency(analysis.totalValue) : "—"}
+                    {formatCurrency(statsById[latestPortfolio.id]?.currentValue ?? 0)}
                   </p>
                 </div>
               </CardContent>
             </Card>
           </div>
 
+          {/* Uploads list */}
           <Card>
             <CardHeader>
               <CardTitle>Your Uploads</CardTitle>
@@ -143,12 +137,7 @@ export default async function DashboardPage() {
             <CardContent>
               <div className="space-y-3">
                 {portfolios.map((p, index) => {
-                  const stats = portfolioStats[p.id];
-                  const returns =
-                    stats && stats.invested > 0
-                      ? ((stats.currentValue - stats.invested) / stats.invested) * 100
-                      : null;
-
+                  const stats = statsById[p.id];
                   return (
                     <div
                       key={p.id}
@@ -176,14 +165,14 @@ export default async function DashboardPage() {
                         <p className="text-sm font-medium">
                           {formatCurrency(stats?.currentValue ?? 0)}
                         </p>
-                        {returns !== null && (
+                        {stats?.returns !== null && stats?.returns !== undefined && (
                           <p
                             className={`text-xs font-medium ${
-                              returns >= 0 ? "text-success" : "text-danger"
+                              stats.returns >= 0 ? "text-success" : "text-danger"
                             }`}
                           >
-                            {returns >= 0 ? "+" : ""}
-                            {returns.toFixed(1)}%
+                            {stats.returns >= 0 ? "+" : ""}
+                            {stats.returns.toFixed(1)}%
                           </p>
                         )}
                       </div>
@@ -194,14 +183,29 @@ export default async function DashboardPage() {
             </CardContent>
           </Card>
 
+          {/* Full analysis of latest portfolio — same components as /analyze */}
           {analysis && (
             <>
+              <div className="flex items-center gap-2">
+                <h2 className="text-base font-semibold">
+                  Analysis · {latestPortfolio.name}
+                </h2>
+                <span className="rounded bg-primary-light px-2 py-0.5 text-[10px] font-medium text-primary">
+                  Latest
+                </span>
+              </div>
+
               <PortfolioSummary analysis={analysis} />
-              <div className="grid gap-6 lg:grid-cols-2">
+
+              <div className="grid gap-5 lg:grid-cols-2">
                 <AllocationChart data={analysis.sectorAllocation} />
                 <BenchmarkComparison data={analysis.benchmarkComparison} />
               </div>
+
               <SuggestionsPanel suggestions={analysis.suggestions} tier="full" />
+
+              <HoldingsTable holdings={analysis.holdings} showFundamentals />
+
               <FullAnalysisView analysis={analysis} />
             </>
           )}

@@ -79,7 +79,7 @@ export default function SupportPage() {
           <Card key={guide.title}>
             <CardContent className="pt-5 text-center">
               <guide.icon className="mx-auto h-6 w-6 text-primary" />
-              <h3 className="mt-3 text-sm font-semibold text-text-primary">{guide.title}</h3>
+              <h3 className="mt-3 text-sm font-semibold">{guide.title}</h3>
               <p className="mt-1 text-xs text-text-muted">{guide.desc}</p>
             </CardContent>
           </Card>
@@ -88,15 +88,15 @@ export default function SupportPage() {
 
       {/* FAQ */}
       <div id="faq" className="mb-10">
-        <h2 className="text-lg font-semibold text-text-primary mb-4">Frequently Asked Questions</h2>
+        <h2 className="text-lg font-semibold mb-4">Frequently Asked Questions</h2>
         <div className="space-y-2">
           {faqs.map((faq, i) => (
-            <div key={i} className="rounded-lg border border-border bg-white">
+            <div key={i} className="rounded-lg border border-border">
               <button
                 className="flex w-full items-center justify-between px-5 py-4 text-left"
                 onClick={() => setOpenFaq(openFaq === i ? null : i)}
               >
-                <span className="text-sm font-medium text-text-primary">{faq.q}</span>
+                <span className="text-sm font-medium">{faq.q}</span>
                 <ChevronDown
                   className={`h-4 w-4 text-text-muted transition-transform ${
                     openFaq === i ? "rotate-180" : ""
@@ -126,7 +126,7 @@ export default function SupportPage() {
             {contactSent ? (
               <div className="py-8 text-center">
                 <Mail className="mx-auto h-8 w-8 text-primary" />
-                <p className="mt-3 text-sm font-medium text-text-primary">
+                <p className="mt-3 text-sm font-medium">
                   Message sent! We&apos;ll get back to you within 24 hours.
                 </p>
               </div>
@@ -147,12 +147,12 @@ export default function SupportPage() {
                   required
                 />
                 <div className="space-y-1.5">
-                  <label htmlFor="contact-message" className="block text-sm font-medium text-text-primary">
+                  <label htmlFor="contact-message" className="block text-sm font-medium">
                     Message
                   </label>
                   <textarea
                     id="contact-message"
-                    className="w-full rounded-lg border border-border bg-white px-3.5 py-2.5 text-sm text-text-primary placeholder:text-text-muted focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20"
+                    className="w-full rounded-lg border border-border bg-white px-3.5 py-2.5 text-sm placeholder:text-text-muted focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20"
                     rows={4}
                     placeholder="How can we help?"
                     required

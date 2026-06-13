@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
-import { CheckCircle2 } from "lucide-react";
+import { CheckCircle2, Save } from "lucide-react";
 import { CsvUpload } from "@/components/analysis/csv-upload";
 import { PortfolioSummary } from "@/components/analysis/portfolio-summary";
 import { AllocationChart } from "@/components/analysis/allocation-chart";
@@ -9,6 +9,7 @@ import { BenchmarkComparison } from "@/components/analysis/benchmark-comparison"
 import { HoldingsTable } from "@/components/analysis/holdings-table";
 import { FullAnalysisView } from "@/components/analysis/full-analysis";
 import { SuggestionsPanel } from "@/components/analysis/suggestions-panel";
+import { Button } from "@/components/ui/button";
 import type { BasicAnalysis, FullAnalysis } from "@/lib/analysis";
 import {
   loadAnalysisSession,
@@ -22,8 +23,10 @@ interface AnalyzeWorkspaceProps {
 
 export function AnalyzeWorkspace({ isAuthenticated }: AnalyzeWorkspaceProps) {
   const [loading, setLoading] = useState(false);
+  const [saving, setSaving] = useState(false);
   const [result, setResult] = useState<StoredAnalysisResult | null>(null);
   const [fileName, setFileName] = useState<string | null>(null);
+  const [csvContent, setCsvContent] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [savedToDashboard, setSavedToDashboard] = useState(false);
 
@@ -35,40 +38,41 @@ export function AnalyzeWorkspace({ isAuthenticated }: AnalyzeWorkspaceProps) {
     }
   }, []);
 
-  const persistToDashboard = useCallback(
-    async (csvContent: string, uploadedFileName: string) => {
-      if (!isAuthenticated) return;
+  const saveToDashboard = useCallback(async () => {
+    if (!isAuthenticated || !csvContent || !fileName) return;
 
-      try {
-        const res = await fetch("/api/portfolio", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            csvContent,
-            fileName: uploadedFileName,
-          }),
-        });
+    setSaving(true);
+    try {
+      const res = await fetch("/api/portfolio", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ csvContent, fileName }),
+      });
 
-        if (res.ok) {
-          setSavedToDashboard(true);
-        }
-      } catch {
-        // Non-blocking — session restore still works if save fails
+      if (res.ok) {
+        setSavedToDashboard(true);
+      } else {
+        const data = await res.json();
+        setError(data.error || "Failed to save to dashboard");
       }
-    },
-    [isAuthenticated]
-  );
+    } catch {
+      setError("Failed to save to dashboard. Please try again.");
+    } finally {
+      setSaving(false);
+    }
+  }, [isAuthenticated, csvContent, fileName]);
 
-  async function handleUpload(csvContent: string, uploadedFileName: string) {
+  async function handleUpload(content: string, uploadedFileName: string) {
     setLoading(true);
     setError(null);
     setSavedToDashboard(false);
+    setCsvContent(content);
 
     try {
       const res = await fetch("/api/analyze", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ csvContent }),
+        body: JSON.stringify({ csvContent: content }),
       });
 
       const data = await res.json();
@@ -99,8 +103,6 @@ export function AnalyzeWorkspace({ isAuthenticated }: AnalyzeWorkspaceProps) {
         result: analysisResult,
         savedAt: Date.now(),
       });
-
-      await persistToDashboard(csvContent, uploadedFileName);
     } catch {
       setError("Failed to analyze. Please check your CSV and try again.");
     } finally {
@@ -120,27 +122,51 @@ export function AnalyzeWorkspace({ isAuthenticated }: AnalyzeWorkspaceProps) {
 
       {result && (
         <div className="mt-6 space-y-5">
-          <div className="flex flex-wrap items-center gap-2">
-            <span className="rounded bg-market-surface px-2.5 py-1 font-mono text-xs text-market-up">
-              {result.holdingsCount} positions
-            </span>
-            <span className="rounded bg-market-surface px-2.5 py-1 text-xs text-market-muted">
-              {result.source.toUpperCase()}
-            </span>
-            <span
-              className={`rounded px-2.5 py-1 text-xs font-medium ${
-                result.tier === "full"
-                  ? "bg-emerald-900/30 text-market-up"
-                  : "bg-amber-900/30 text-market-warning"
-              }`}
-            >
-              {result.tier === "full" ? "PRO" : "FREE"} analysis
-            </span>
-            {savedToDashboard && (
-              <span className="flex items-center gap-1 rounded bg-emerald-900/30 px-2.5 py-1 text-xs font-medium text-market-up">
-                <CheckCircle2 className="h-3 w-3" />
-                Saved to dashboard
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <div className="flex flex-wrap items-center gap-2">
+              <span className="rounded bg-market-surface px-2.5 py-1 font-mono text-xs text-market-up">
+                {result.holdingsCount} positions
               </span>
+              <span className="rounded bg-market-surface px-2.5 py-1 text-xs text-market-muted">
+                {result.source.toUpperCase()}
+              </span>
+              <span
+                className={`rounded px-2.5 py-1 text-xs font-medium ${
+                  result.tier === "full"
+                    ? "bg-emerald-900/30 text-market-up"
+                    : "bg-amber-900/30 text-market-warning"
+                }`}
+              >
+                {result.tier === "full" ? "PRO" : "FREE"} analysis
+              </span>
+              {savedToDashboard && (
+                <span className="flex items-center gap-1 rounded bg-emerald-900/30 px-2.5 py-1 text-xs font-medium text-market-up">
+                  <CheckCircle2 className="h-3 w-3" />
+                  Saved to dashboard
+                </span>
+              )}
+            </div>
+
+            {isAuthenticated && !savedToDashboard && (
+              <Button
+                onClick={saveToDashboard}
+                disabled={saving}
+                size="sm"
+                variant="outline"
+                className="gap-1.5 text-xs"
+              >
+                {saving ? (
+                  <>
+                    <div className="h-3 w-3 animate-spin rounded-full border-2 border-current border-t-transparent" />
+                    Saving...
+                  </>
+                ) : (
+                  <>
+                    <Save className="h-3 w-3" />
+                    Save to Dashboard
+                  </>
+                )}
+              </Button>
             )}
           </div>
 
