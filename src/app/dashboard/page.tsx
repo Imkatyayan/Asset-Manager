@@ -4,7 +4,7 @@ import { Upload, TrendingUp, PieChart, ArrowRight } from "lucide-react";
 import { getSession } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { analyzeFull, type FullAnalysis } from "@/lib/analysis";
-import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { PortfolioSummary } from "@/components/analysis/portfolio-summary";
 import { AllocationChart } from "@/components/analysis/allocation-chart";
@@ -12,6 +12,7 @@ import { BenchmarkComparison } from "@/components/analysis/benchmark-comparison"
 import { HoldingsTable } from "@/components/analysis/holdings-table";
 import { FullAnalysisView } from "@/components/analysis/full-analysis";
 import { SuggestionsPanel } from "@/components/analysis/suggestions-panel";
+import { UploadsList } from "@/components/analysis/uploads-list";
 import { formatCurrency } from "@/lib/utils";
 
 export default async function DashboardPage() {
@@ -39,6 +40,18 @@ export default async function DashboardPage() {
     return { id: p.id, currentValue, invested, returns };
   });
   const statsById = Object.fromEntries(portfolioStats.map((s) => [s.id, s]));
+
+  const serializablePortfolios = portfolios.map((p) => ({
+    id: p.id,
+    name: p.name,
+    source: p.source,
+    updatedAt: p.updatedAt.toISOString(),
+    holdings: p.holdings.map((h) => ({
+      quantity: h.quantity,
+      avgPrice: h.avgPrice,
+      currentPrice: h.currentPrice,
+    })),
+  }));
 
   // Run full analysis on the latest portfolio, passing DB-stored currentPrice
   // as csvLtp so resolveCurrentPrice uses it directly (same priority as /analyze).
@@ -130,58 +143,7 @@ export default async function DashboardPage() {
           </div>
 
           {/* Uploads list */}
-          <Card>
-            <CardHeader>
-              <CardTitle>Your Uploads</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-3">
-                {portfolios.map((p, index) => {
-                  const stats = statsById[p.id];
-                  return (
-                    <div
-                      key={p.id}
-                      className="flex items-center justify-between rounded-lg border border-border p-4"
-                    >
-                      <div>
-                        <div className="flex items-center gap-2">
-                          <p className="text-sm font-medium">{p.name}</p>
-                          {index === 0 && (
-                            <span className="rounded bg-primary-light px-2 py-0.5 text-[10px] font-medium text-primary">
-                              Latest
-                            </span>
-                          )}
-                        </div>
-                        <p className="text-xs text-text-muted">
-                          {p.holdings.length} holdings · {p.source.toUpperCase()} ·{" "}
-                          {new Date(p.updatedAt).toLocaleDateString("en-IN", {
-                            day: "numeric",
-                            month: "short",
-                            year: "numeric",
-                          })}
-                        </p>
-                      </div>
-                      <div className="text-right">
-                        <p className="text-sm font-medium">
-                          {formatCurrency(stats?.currentValue ?? 0)}
-                        </p>
-                        {stats?.returns !== null && stats?.returns !== undefined && (
-                          <p
-                            className={`text-xs font-medium ${
-                              stats.returns >= 0 ? "text-success" : "text-danger"
-                            }`}
-                          >
-                            {stats.returns >= 0 ? "+" : ""}
-                            {stats.returns.toFixed(1)}%
-                          </p>
-                        )}
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
-            </CardContent>
-          </Card>
+          <UploadsList portfolios={serializablePortfolios} statsById={statsById} />
 
           {/* Full analysis of latest portfolio — same components as /analyze */}
           {analysis && (

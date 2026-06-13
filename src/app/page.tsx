@@ -78,7 +78,7 @@ export default async function HomePage() {
             <div className="mb-6 inline-flex items-center gap-2 rounded-full glass-card px-4 py-1.5 text-sm text-market-muted">
               <BarChart3 className="h-4 w-4 text-market-up" />
               <span className="market-pulse-dot" />
-              Investor's one stop solution for smart portfolio analysis.
+              Investor&apos;s one stop solution for smart portfolio analysis.
             </div>
 
             <h1 className="text-4xl font-bold tracking-tight text-market-text sm:text-5xl lg:text-6xl">

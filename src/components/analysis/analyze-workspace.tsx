@@ -10,7 +10,7 @@ import { HoldingsTable } from "@/components/analysis/holdings-table";
 import { FullAnalysisView } from "@/components/analysis/full-analysis";
 import { SuggestionsPanel } from "@/components/analysis/suggestions-panel";
 import { Button } from "@/components/ui/button";
-import type { BasicAnalysis, FullAnalysis } from "@/lib/analysis";
+import type { FullAnalysis } from "@/lib/analysis";
 import {
   loadAnalysisSession,
   saveAnalysisSession,

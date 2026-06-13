@@ -100,3 +100,62 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "Failed to save portfolio" }, { status: 500 });
   }
 }
+
+export async function DELETE(req: NextRequest) {
+  const session = await getSession();
+  if (!session) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+
+  try {
+    const { searchParams } = new URL(req.url);
+    const id = searchParams.get("id");
+
+    let idsToDelete: string[] = [];
+
+    if (id) {
+      idsToDelete = [id];
+    } else {
+      try {
+        const body = await req.json();
+        if (body.ids && Array.isArray(body.ids)) {
+          idsToDelete = body.ids;
+        } else if (body.id) {
+          idsToDelete = [body.id];
+        }
+      } catch {
+        // Request body might be empty
+      }
+    }
+
+    if (idsToDelete.length === 0) {
+      return NextResponse.json({ error: "Portfolio ID(s) required" }, { status: 400 });
+    }
+
+    // Verify ownership of the portfolios
+    const portfolios = await prisma.portfolio.findMany({
+      where: {
+        id: { in: idsToDelete },
+      },
+    });
+
+    if (portfolios.length === 0) {
+      return NextResponse.json({ error: "Portfolio not found" }, { status: 404 });
+    }
+
+    const isUnauthorized = portfolios.some((p) => p.userId !== session.id);
+    if (isUnauthorized) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
+    await prisma.portfolio.deleteMany({
+      where: {
+        id: { in: idsToDelete },
+      },
+    });
+
+    return NextResponse.json({ success: true, deletedCount: portfolios.length });
+  } catch {
+    return NextResponse.json({ error: "Failed to delete portfolio" }, { status: 500 });
+  }
+}

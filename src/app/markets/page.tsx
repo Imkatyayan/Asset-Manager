@@ -23,7 +23,7 @@ export default function MarketsPage() {
   return (
     <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6">
       <div className="mb-8">
-        <h1 className="text-2xl font-bold text-text-primary">Markets</h1>
+        <h1 className="text-2xl font-bold">Markets</h1>
         <p className="mt-1 text-text-secondary">
           Live NSE/BSE prices, indices, ETFs, technical indicators, and Indian market news.
           Data sourced from Yahoo Finance, refreshed every 5 minutes.
