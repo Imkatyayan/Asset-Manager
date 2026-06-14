@@ -1,21 +1,21 @@
 @import "tailwindcss";
 
 @theme {
-  --color-primary: #00D09C;
-  --color-primary-dark: #00B386;
-  --color-primary-light: #E6FBF5;
-  --color-accent: #387ED1;
-  --color-accent-dark: #2B63A8;
-  --color-surface: #FFFFFF;
-  --color-surface-secondary: #F0F3F7;
-  --color-surface-tertiary: #E2E8F0;
-  --color-text-primary: #1A1D26;
-  --color-text-secondary: #6B7280;
-  --color-text-muted: #9CA3AF;
-  --color-border: #DDE3EA;
-  --color-success: #00C076;
-  --color-danger: #FF5252;
-  --color-warning: #FFB800;
+  --color-primary: var(--color-market-up);
+  --color-primary-dark: var(--color-market-up-dark);
+  --color-primary-light: var(--color-market-up-light);
+  --color-accent: var(--color-market-accent);
+  --color-accent-dark: var(--color-market-accent-dark);
+  --color-surface: var(--color-market-card);
+  --color-surface-secondary: var(--color-market-surface);
+  --color-surface-tertiary: var(--color-market-border);
+  --color-text-primary: var(--color-market-text);
+  --color-text-secondary: var(--color-market-muted);
+  --color-text-muted: var(--color-market-muted);
+  --color-border: var(--color-market-border);
+  --color-success: var(--color-market-up);
+  --color-danger: var(--color-market-down);
+  --color-warning: var(--color-market-warning);
 
   --font-sans: "Inter", system-ui, -apple-system, sans-serif;
   --font-mono: "JetBrains Mono", "SF Mono", "Fira Code", monospace;
@@ -30,36 +30,42 @@
   --color-market-border: #30363d;
   --color-market-text: #e6edf3;
   --color-market-muted: #8b949e;
-  --color-market-up: #00c076;
-  --color-market-down: #ff4757;
+  --color-market-up: #10b981;
+  --color-market-up-dark: #059669;
+  --color-market-up-light: rgba(16, 185, 129, 0.1);
+  --color-market-down: #ef4444;
   --color-market-warning: #ffb800;
-  --color-market-accent: #387ed1;
+  --color-market-accent: #ef4444;
+  --color-market-accent-dark: #b91c1c;
   --color-market-bse: #e31e24;
-  --color-market-glow-up: rgba(0, 192, 118, 0.15);
-  --color-market-glow-down: rgba(255, 71, 87, 0.15);
-  --hero-gradient: linear-gradient(135deg, #0a1628 0%, #0d1117 40%, #161b22 100%);
+  --color-market-glow-up: rgba(16, 185, 129, 0.15);
+  --color-market-glow-down: rgba(239, 68, 68, 0.15);
+  --hero-gradient: linear-gradient(135deg, #1f1414 0%, #0d1117 50%, #161b22 100%);
   --glass-bg: rgba(255, 255, 255, 0.06);
-  --glass-border: rgba(255, 255, 255, 0.1);
+  --glass-border: rgba(239, 68, 68, 0.12);
 }
 
 /* Light theme */
 [data-theme="light"] {
-  --color-market-bg: #f4f6f9;
-  --color-market-surface: #ffffff;
-  --color-market-card: #ffffff;
-  --color-market-border: #e2e8f0;
-  --color-market-text: #1a1d26;
-  --color-market-muted: #64748b;
-  --color-market-up: #00a651;
-  --color-market-down: #e31e24;
-  --color-market-warning: #f59e0b;
-  --color-market-accent: #2563eb;
-  --color-market-bse: #e31e24;
-  --color-market-glow-up: rgba(0, 166, 81, 0.12);
-  --color-market-glow-down: rgba(227, 30, 36, 0.12);
-  --hero-gradient: linear-gradient(135deg, #fff5f5 0%, #f4f6f9 50%, #eef2ff 100%);
-  --glass-bg: rgba(255, 255, 255, 0.85);
-  --glass-border: rgba(227, 30, 36, 0.12);
+  --color-market-bg: #f9f6f0;
+  --color-market-surface: #f2ebe0;
+  --color-market-card: #faf8f5;
+  --color-market-border: #e6dfd5;
+  --color-market-text: #1c1917;
+  --color-market-muted: #78716c;
+  --color-market-up: #059669;
+  --color-market-up-dark: #047857;
+  --color-market-up-light: #e6f6f0;
+  --color-market-down: #dc2626;
+  --color-market-warning: #d97706;
+  --color-market-accent: #dc2626;
+  --color-market-accent-dark: #991b1b;
+  --color-market-bse: #dc2626;
+  --color-market-glow-up: rgba(5, 150, 105, 0.1);
+  --color-market-glow-down: rgba(220, 38, 38, 0.1);
+  --hero-gradient: linear-gradient(135deg, #fdfbf7 0%, #f7f5f0 50%, #efebe2 100%);
+  --glass-bg: rgba(250, 248, 245, 0.85);
+  --glass-border: rgba(220, 38, 38, 0.12);
 }
 
 @theme inline {
@@ -83,7 +89,7 @@
 
   body {
     @apply bg-market-bg text-market-text font-sans antialiased;
-    transition: background-color 0.25s ease, color 0.25s ease;
+    transition: background-color 0.3s cubic-bezier(0.4, 0, 0.2, 1), color 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   }
 }
 
@@ -93,27 +99,14 @@
   }
 
   .gradient-hero {
-    background: var(--hero-gradient);
+    /* background: var(--hero-gradient); */
     position: relative;
     overflow: hidden;
   }
 
-  /* .gradient-hero::before {
-    content: "";
-    position: absolute;
-    inset: 0;
-    background-image:
-      linear-gradient(var(--color-market-glow-down) 1px, transparent 1px),
-      linear-gradient(90deg, var(--color-market-glow-down) 1px, transparent 1px);
-    background-size: 48px 48px;
-    opacity: 0.4;
-    animation: grid-drift 20s linear infinite;
-    pointer-events: none;
-  } */
-
   .glass-card {
     background: var(--glass-bg);
-    backdrop-filter: blur(12px);
+    backdrop-filter: blur(16px);
     border: 1px solid var(--glass-border);
   }
 
@@ -123,12 +116,14 @@
   }
 
   .market-panel {
-    @apply rounded-lg border border-market-border bg-market-card;
-    transition: border-color 0.2s ease, box-shadow 0.2s ease;
+    @apply rounded-xl border border-market-border bg-market-card;
+    transition: border-color 0.25s ease, box-shadow 0.25s ease, transform 0.25s ease;
   }
 
   .market-panel:hover {
-    box-shadow: 0 0 0 1px var(--color-market-glow-up);
+    box-shadow: 0 8px 30px rgba(0, 0, 0, 0.25), 0 0 0 1px var(--color-market-glow-up);
+    border-color: var(--color-market-up);
+    transform: translateY(-2px);
   }
 
   .text-profit {
@@ -157,40 +152,145 @@
   .market-pulse-dot.down {
     background: var(--color-market-down);
   }
+
+  /* Cool graphics: subtle grid background pattern matching tone */
+  .tech-grid {
+    background-size: 32px 32px;
+    background-image:
+      linear-gradient(to right, rgba(139, 148, 158, 0.04) 1px, transparent 1px),
+      linear-gradient(to bottom, rgba(139, 148, 158, 0.04) 1px, transparent 1px);
+  }
+
+  /* Stagger animation delays */
+  .stagger-1 {
+    animation-delay: 40ms;
+  }
+
+  .stagger-2 {
+    animation-delay: 80ms;
+  }
+
+  .stagger-3 {
+    animation-delay: 120ms;
+  }
+
+  .stagger-4 {
+    animation-delay: 160ms;
+  }
+
+  .stagger-5 {
+    animation-delay: 200ms;
+  }
+
+  .stagger-6 {
+    animation-delay: 240ms;
+  }
 }
 
 @keyframes ticker {
-  0% { transform: translateX(0); }
-  100% { transform: translateX(-50%); }
+  0% {
+    transform: translateX(0);
+  }
+
+  100% {
+    transform: translateX(-50%);
+  }
 }
 
 @keyframes grid-drift {
-  0% { transform: translate(0, 0); }
-  100% { transform: translate(48px, 48px); }
+  0% {
+    transform: translate(0, 0);
+  }
+
+  100% {
+    transform: translate(32px, 32px);
+  }
 }
 
 @keyframes bse-shimmer {
-  0%, 100% { background-position: 0% 50%; }
-  50% { background-position: 100% 50%; }
+
+  0%,
+  100% {
+    background-position: 0% 50%;
+  }
+
+  50% {
+    background-position: 100% 50%;
+  }
 }
 
 @keyframes pulse-dot {
-  0%, 100% { opacity: 1; transform: scale(1); }
-  50% { opacity: 0.5; transform: scale(0.85); }
+
+  0%,
+  100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+
+  50% {
+    opacity: 0.4;
+    transform: scale(0.8);
+  }
 }
 
 @keyframes flash-up {
-  0% { background-color: var(--color-market-glow-up); }
-  100% { background-color: transparent; }
+  0% {
+    background-color: var(--color-market-glow-up);
+  }
+
+  100% {
+    background-color: transparent;
+  }
 }
 
 @keyframes flash-down {
-  0% { background-color: var(--color-market-glow-down); }
-  100% { background-color: transparent; }
+  0% {
+    background-color: var(--color-market-glow-down);
+  }
+
+  100% {
+    background-color: transparent;
+  }
+}
+
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(12px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes float {
+
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+
+  50% {
+    transform: translateY(-6px);
+  }
+}
+
+@keyframes pulse-glow {
+
+  0%,
+  100% {
+    box-shadow: 0 0 15px rgba(16, 185, 129, 0.08);
+  }
+
+  50% {
+    box-shadow: 0 0 25px rgba(16, 185, 129, 0.22);
+  }
 }
 
 .animate-ticker {
-  animation: ticker 40s linear infinite;
+  animation: ticker 45s linear infinite;
 }
 
 .animate-ticker:hover {
@@ -203,4 +303,17 @@
 
 .flash-down {
   animation: flash-down 0.6s ease-out;
+}
+
+.animate-fade-in-up {
+  animation: fadeInUp 0.6s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  opacity: 0;
+}
+
+.animate-float {
+  animation: float 5s ease-in-out infinite;
+}
+
+.animate-glow-pulse {
+  animation: pulse-glow 4s infinite ease-in-out;
 }

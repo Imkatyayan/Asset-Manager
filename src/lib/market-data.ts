@@ -652,18 +652,23 @@ export function enrichHolding(symbol: string, avgPrice: number): EnrichedHolding
 export async function enrichHoldingAsync(
   symbol: string,
   avgPrice: number,
-  liveQuotes?: Map<string, import("./yahoo-finance").YahooQuote>
+  liveQuotes?: Map<string, import("./yahoo-finance").YahooQuote>,
+  resolvedInfo?: {
+    resolvedSymbol: string;
+    resolvedName?: string;
+    resolvedYahooSymbol?: string;
+  }
 ): Promise<EnrichedHoldingData> {
   const normalized = symbol.toUpperCase().replace(/\.(NS|BO|NSE|BSE)$/i, "");
-  let staticStock = getStockData(normalized);
+  let resolvedSymbol = resolvedInfo?.resolvedSymbol || normalized;
+  let staticStock = getStockData(resolvedSymbol);
 
   const { toYahooSymbol, fetchQuotes, fetchYearReturn, searchSymbols } = await import("./yahoo-finance");
 
-  let resolvedSymbol = normalized;
-  let resolvedYahooSymbol = toYahooSymbol(normalized);
-  let resolvedName = symbol;
+  let resolvedYahooSymbol = resolvedInfo?.resolvedYahooSymbol || toYahooSymbol(resolvedSymbol);
+  let resolvedName = resolvedInfo?.resolvedName || symbol;
 
-  if (!staticStock) {
+  if (!staticStock && !resolvedInfo) {
     try {
       const searchHits = await searchSymbols(normalized, 1);
       if (searchHits[0]) {
@@ -741,30 +746,55 @@ export async function enrichHoldingsBatch(
 ): Promise<EnrichedHoldingData[]> {
   const { toYahooSymbol, fetchQuotes, searchSymbols } = await import("./yahoo-finance");
 
+  interface ResolvedHoldingInfo {
+    originalSymbol: string;
+    resolvedSymbol: string;
+    resolvedName?: string;
+    resolvedYahooSymbol?: string;
+    avgPrice: number;
+  }
+
   // First, resolve all non-standard symbols or ISINs dynamically
-  const resolvedHoldings = await Promise.all(
+  const resolvedHoldings: ResolvedHoldingInfo[] = await Promise.all(
     holdings.map(async (h) => {
       const normalized = h.symbol.toUpperCase().replace(/\.(NS|BO|NSE|BSE)$/i, "");
       const staticStock = getStockData(normalized);
       if (staticStock) {
-        return { originalSymbol: h.symbol, resolvedSymbol: staticStock.symbol, avgPrice: h.avgPrice };
+        return {
+          originalSymbol: h.symbol,
+          resolvedSymbol: staticStock.symbol,
+          resolvedName: staticStock.name,
+          resolvedYahooSymbol: toYahooSymbol(staticStock.symbol),
+          avgPrice: h.avgPrice,
+        };
       }
 
       // Try dynamic search via Yahoo API
       try {
         const searchHits = await searchSymbols(normalized, 1);
         if (searchHits[0]) {
-          return { originalSymbol: h.symbol, resolvedSymbol: searchHits[0].symbol, avgPrice: h.avgPrice };
+          return {
+            originalSymbol: h.symbol,
+            resolvedSymbol: searchHits[0].symbol,
+            resolvedName: searchHits[0].name,
+            resolvedYahooSymbol: searchHits[0].yahooSymbol,
+            avgPrice: h.avgPrice,
+          };
         }
       } catch (err) {
         console.error("Dynamic symbol search failed for query in batch:", normalized, err);
       }
 
-      return { originalSymbol: h.symbol, resolvedSymbol: normalized, avgPrice: h.avgPrice };
+      return {
+        originalSymbol: h.symbol,
+        resolvedSymbol: normalized,
+        resolvedYahooSymbol: toYahooSymbol(normalized),
+        avgPrice: h.avgPrice,
+      };
     })
   );
 
-  const yahooSymbols = resolvedHoldings.map((h) => toYahooSymbol(h.resolvedSymbol));
+  const yahooSymbols = resolvedHoldings.map((h) => h.resolvedYahooSymbol || toYahooSymbol(h.resolvedSymbol));
   let quoteMap = new Map<string, import("./yahoo-finance").YahooQuote>();
 
   try {
@@ -776,7 +806,7 @@ export async function enrichHoldingsBatch(
 
   const results = await Promise.all(
     resolvedHoldings.map(async (h) => {
-      const yahooSymbol = toYahooSymbol(h.resolvedSymbol);
+      const yahooSymbol = h.resolvedYahooSymbol || toYahooSymbol(h.resolvedSymbol);
       if (!quoteMap.has(yahooSymbol)) {
         try {
           const single = await fetchQuotes([yahooSymbol]);
@@ -785,7 +815,7 @@ export async function enrichHoldingsBatch(
           // fall through to enrichHolding fallback
         }
       }
-      return enrichHoldingAsync(h.originalSymbol, h.avgPrice, quoteMap);
+      return enrichHoldingAsync(h.originalSymbol, h.avgPrice, quoteMap, h);
     })
   );
 

@@ -27,7 +27,6 @@ export default async function RootLayout({
     <html lang="en" suppressHydrationWarning>
       <body className={`${inter.variable} ${jetbrains.variable} font-sans`}>
         <ThemeProvider>
-          <div className="bse-accent-bar" />
           <Navbar user={session} />
           <MarketTicker />
           <main className="min-h-[calc(100vh-6rem)]">{children}</main>

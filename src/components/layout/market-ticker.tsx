@@ -97,26 +97,28 @@ export function MarketTicker() {
           ))}
         </div>
       )}
-      <div className="hidden sm:flex items-center justify-end gap-4 px-4 py-1.5 bg-market-surface border-t border-market-border text-[10px] text-market-muted">
-        {niftyPrice != null && (
-          <span className="font-mono text-market-text">
-            NIFTY 50: {niftyPrice.toLocaleString("en-IN", { maximumFractionDigits: 2 })}
-          </span>
-        )}
-        {niftyYear != null && (
-          <span>
-            1Y: {niftyYear >= 0 ? "+" : ""}
-            {niftyYear}%
-          </span>
-        )}
-        {sensexYear != null && (
-          <span>
-            SENSEX 1Y: {sensexYear >= 0 ? "+" : ""}
-            {sensexYear}%
-          </span>
-        )}
-        <span className="text-market-muted">|</span>
-        <span>{updatedAt ? `Live · ${updatedAt}` : "Yahoo Finance"}</span>
+      <div className="hidden sm:flex bg-market-surface border-t border-market-border">
+        <div className="mx-auto w-full max-w-7xl flex items-center justify-end gap-4 px-4 py-1.5 sm:px-6 text-[10px] text-market-muted">
+          {niftyPrice != null && (
+            <span className="font-mono text-market-text">
+              NIFTY 50: {niftyPrice.toLocaleString("en-IN", { maximumFractionDigits: 2 })}
+            </span>
+          )}
+          {niftyYear != null && (
+            <span>
+              1Y: {niftyYear >= 0 ? "+" : ""}
+              {niftyYear}%
+            </span>
+          )}
+          {sensexYear != null && (
+            <span>
+              SENSEX 1Y: {sensexYear >= 0 ? "+" : ""}
+              {sensexYear}%
+            </span>
+          )}
+          <span className="text-market-muted">|</span>
+          <span>{updatedAt ? `Live · ${updatedAt}` : "Yahoo Finance"}</span>
+        </div>
       </div>
     </div>
   );

@@ -32,7 +32,7 @@ export function HoldingsTable({ holdings, showFundamentals }: HoldingsTableProps
   };
 
   return (
-    <Card className="border border-market-border bg-market-card overflow-hidden">
+    <Card className="border border-market-border bg-market-card overflow-hidden animate-fade-in-up stagger-3">
       <CardHeader className="border-b border-market-border px-5 py-4">
         <CardTitle className="text-sm font-semibold tracking-wide">
           Holdings · {holdings.length} Positions
@@ -196,7 +196,7 @@ export function HoldingsTable({ holdings, showFundamentals }: HoldingsTableProps
                   {isExpanded && (
                     <tr className="bg-market-surface/15 hover:bg-market-surface/15 transition-all duration-300">
                       <td colSpan={showFundamentals ? 10 : 8} className="px-6 py-5 border-b border-market-border/40">
-                        <div className="grid gap-6 md:grid-cols-3 text-xs text-market-text leading-relaxed">
+                        <div className="grid gap-6 md:grid-cols-3 text-xs text-market-text leading-relaxed animate-fade-in-up">
                           {/* Column 1: Technical Indicators & Recommendations */}
                           <div className="space-y-3 p-4 rounded-lg bg-market-card/50 border border-market-border/40 shadow-sm">
                             <h4 className="flex items-center gap-2 font-bold text-market-accent uppercase tracking-wide text-[10px] pb-1.5 border-b border-market-border/40">

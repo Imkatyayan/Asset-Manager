@@ -177,7 +177,7 @@ export function CsvUpload({ onUpload, loading, initialFileName }: CsvUploadProps
         className={cn(
           "relative rounded-lg border-2 border-dashed p-8 text-center transition-all",
           dragOver
-            ? "border-market-up bg-emerald-950/20"
+            ? "border-market-up bg-market-up/10"
             : "border-market-border bg-market-card hover:border-market-up/40",
           isProgress && "pointer-events-none opacity-60"
         )}

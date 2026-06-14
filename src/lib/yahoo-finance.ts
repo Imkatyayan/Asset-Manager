@@ -2,7 +2,6 @@ import { deriveTrend, rsi, sma } from "./technical-indicators";
 
 const USER_AGENT =
   "Mozilla/5.0 (compatible; PortfolioIQ/1.0; +https://github.com/portfolioiq)";
-const CACHE_TTL_MS = 5 * 60 * 1000;
 
 export interface YahooQuote {
   symbol: string;
@@ -69,9 +68,16 @@ interface CacheEntry<T> {
 const quoteCache = new Map<string, CacheEntry<YahooQuote>>();
 const detailCache = new Map<string, CacheEntry<QuoteDetail>>();
 const yearReturnCache = new Map<string, CacheEntry<number>>();
+const searchCache = new Map<string, CacheEntry<SearchResult[]>>();
 
-function isFresh<T>(entry: CacheEntry<T> | undefined): entry is CacheEntry<T> {
-  return !!entry && Date.now() - entry.fetchedAt < CACHE_TTL_MS;
+const QUOTE_CACHE_TTL_MS = 5 * 60 * 1000; // 5 minutes
+const DETAIL_CACHE_TTL_MS = 12 * 60 * 60 * 1000; // 12 hours
+
+function isFresh<T>(
+  entry: CacheEntry<T> | undefined,
+  ttlMs: number = QUOTE_CACHE_TTL_MS
+): entry is CacheEntry<T> {
+  return !!entry && Date.now() - entry.fetchedAt < ttlMs;
 }
 
 function round2(n: number): number {
@@ -95,10 +101,11 @@ export function isIndianSymbol(symbol: string): boolean {
   );
 }
 
-async function yahooFetch(url: string): Promise<Response> {
+async function yahooFetch(url: string, init?: RequestInit): Promise<Response> {
   return fetch(url, {
     headers: { "User-Agent": USER_AGENT },
     cache: "no-store",
+    ...init,
   });
 }
 
@@ -178,7 +185,7 @@ export async function fetchQuotes(yahooSymbols: string[]): Promise<YahooQuote[]>
 
   for (const sym of unique) {
     const entry = quoteCache.get(sym);
-    if (isFresh(entry)) cached.push(entry.data);
+    if (isFresh(entry, QUOTE_CACHE_TTL_MS)) cached.push(entry.data);
     else missing.push(sym);
   }
 
@@ -208,11 +215,18 @@ export async function fetchQuotes(yahooSymbols: string[]): Promise<YahooQuote[]>
 export async function searchSymbols(query: string, limit = 12): Promise<SearchResult[]> {
   if (!query.trim()) return [];
 
+  const cacheKey = `${query.trim().toLowerCase()}:${limit}`;
+  const entry = searchCache.get(cacheKey);
+  if (isFresh(entry, DETAIL_CACHE_TTL_MS)) return entry.data;
+
   const url = `https://query2.finance.yahoo.com/v1/finance/search?q=${encodeURIComponent(
     query
   )}&quotesCount=${limit * 2}&newsCount=0`;
 
-  const res = await yahooFetch(url);
+  const res = await yahooFetch(url, {
+    cache: "force-cache",
+    next: { revalidate: 86400 },
+  });
   if (!res.ok) return [];
 
   const json = (await res.json()) as {
@@ -226,7 +240,7 @@ export async function searchSymbols(query: string, limit = 12): Promise<SearchRe
     }>;
   };
 
-  return (json.quotes ?? [])
+  const results = (json.quotes ?? [])
     .filter((q) => isIndianSymbol(q.symbol))
     .slice(0, limit)
     .map((q) => ({
@@ -237,6 +251,9 @@ export async function searchSymbols(query: string, limit = 12): Promise<SearchRe
       exchange: q.exchange || "NSE",
       sector: q.sector,
     }));
+
+  searchCache.set(cacheKey, { data: results, fetchedAt: Date.now() });
+  return results;
 }
 
 export type ChartRange = "1d" | "5d" | "1mo" | "3mo" | "6mo" | "1y" | "5y" | "max";
@@ -277,7 +294,10 @@ async function fetchChart(
     yahooSymbol
   )}?interval=${interval}&range=${range}`;
 
-  const res = await yahooFetch(url);
+  const res = await yahooFetch(url, {
+    cache: "force-cache",
+    next: { revalidate: 43200 },
+  });
   if (!res.ok) throw new Error(`Yahoo chart API error: ${res.status}`);
 
   const json = (await res.json()) as {
@@ -311,7 +331,7 @@ async function fetchChart(
 
 export async function fetchYearReturn(yahooSymbol: string): Promise<number | null> {
   const entry = yearReturnCache.get(yahooSymbol);
-  if (isFresh(entry)) return entry.data;
+  if (isFresh(entry, DETAIL_CACHE_TTL_MS)) return entry.data;
 
   try {
     const { closes } = await fetchChart(yahooSymbol, "1y");
@@ -331,7 +351,7 @@ export async function fetchQuoteDetail(
   const yahooSymbol = toYahooSymbol(symbol);
   const cacheKey = `${yahooSymbol}:${chartRange}`;
   const cached = detailCache.get(cacheKey);
-  if (isFresh(cached)) return cached.data;
+  if (isFresh(cached, DETAIL_CACHE_TTL_MS)) return cached.data;
 
   try {
     // Always fetch 1y for SMA/RSI; fetch selected range for chart display

@@ -123,7 +123,7 @@ export function UploadsList({ portfolios, statsById, selectedPortfolioId }: Uplo
   if (portfolios.length === 0) return null;
 
   return (
-    <Card className="relative overflow-hidden transition-all duration-300 border border-market-border bg-market-card">
+    <Card className="relative overflow-hidden transition-all duration-300 border border-market-border bg-market-card animate-fade-in-up stagger-2">
       <CardHeader className="flex flex-row items-center justify-between border-b border-market-border/40 pb-4">
         <div className="flex items-center gap-3">
           <button
@@ -222,12 +222,12 @@ export function UploadsList({ portfolios, statsById, selectedPortfolioId }: Uplo
             return (
               <div
                 key={p.id}
-                className={`group relative flex items-center justify-between rounded-lg border p-4 transition-all duration-200 ${
+                className={`group relative flex items-center justify-between rounded-lg border p-4 transition-all duration-300 ${
                   isActive
-                    ? "border-market-up bg-emerald-950/10 hover:bg-emerald-950/15"
+                    ? "border-market-up bg-market-up/10 hover:bg-market-up/15 shadow-[0_0_15px_var(--color-market-glow-up)]"
                     : isSelected
-                    ? "border-market-accent bg-market-accent/5"
-                    : "border-market-border hover:border-market-border/80 hover:bg-market-surface/40"
+                    ? "border-market-up/60 bg-market-up/5 shadow-[0_0_10px_var(--color-market-glow-up)]/60"
+                    : "border-market-border hover:border-market-up/30 hover:bg-market-surface/40 hover:shadow-sm"
                 }`}
               >
                 {/* Single Delete Confirm Overlay inline */}
@@ -289,7 +289,7 @@ export function UploadsList({ portfolios, statsById, selectedPortfolioId }: Uplo
                       <div className="flex items-center gap-2">
                         <p className="text-sm font-semibold text-market-text group-hover:text-market-up transition-colors">{p.name}</p>
                         {isActive && (
-                          <span className="rounded bg-emerald-950 border border-market-up/30 px-2.5 py-0.5 text-[10px] font-medium text-market-up">
+                          <span className="rounded bg-market-up/10 border border-market-up/20 px-2.5 py-0.5 text-[10px] font-medium text-market-up">
                             Active View
                           </span>
                         )}
