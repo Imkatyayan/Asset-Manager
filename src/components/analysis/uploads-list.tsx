@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Trash2, AlertTriangle, CheckSquare, Square, Loader2 } from "lucide-react";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
@@ -221,10 +222,7 @@ export function UploadsList({ portfolios, statsById, selectedPortfolioId }: Uplo
             return (
               <div
                 key={p.id}
-                onClick={() => {
-                  router.push(`/dashboard?portfolioId=${p.id}`);
-                }}
-                className={`group relative flex items-center justify-between rounded-lg border p-4 transition-all duration-200 cursor-pointer ${
+                className={`group relative flex items-center justify-between rounded-lg border p-4 transition-all duration-200 ${
                   isActive
                     ? "border-market-up bg-emerald-950/10 hover:bg-emerald-950/15"
                     : isSelected
@@ -265,7 +263,7 @@ export function UploadsList({ portfolios, statsById, selectedPortfolioId }: Uplo
                   </div>
                 )}
 
-                <div className="flex items-center gap-3">
+                <div className="flex items-center gap-3 flex-1 min-w-0">
                   {/* Select Checkbox */}
                   <button
                     type="button"
@@ -282,62 +280,66 @@ export function UploadsList({ portfolios, statsById, selectedPortfolioId }: Uplo
                     )}
                   </button>
 
-                  <div>
-                    <div className="flex items-center gap-2">
-                      <p className="text-sm font-medium text-market-text">{p.name}</p>
-                      {isActive && (
-                        <span className="rounded bg-emerald-950 border border-market-up/30 px-2.5 py-0.5 text-[10px] font-medium text-market-up">
-                          Active View
-                        </span>
-                      )}
-                      {index === 0 && !isActive && (
-                        <span className="rounded bg-market-accent/15 px-2 py-0.5 text-[10px] font-medium text-market-accent">
-                          Latest
-                        </span>
+                  {/* Clickable Area: Title and Details linked directly to Dashboard active view */}
+                  <Link
+                    href={`/dashboard?portfolioId=${p.id}`}
+                    className="flex-1 min-w-0 flex items-center justify-between pr-4 select-none"
+                  >
+                    <div>
+                      <div className="flex items-center gap-2">
+                        <p className="text-sm font-semibold text-market-text group-hover:text-market-up transition-colors">{p.name}</p>
+                        {isActive && (
+                          <span className="rounded bg-emerald-950 border border-market-up/30 px-2.5 py-0.5 text-[10px] font-medium text-market-up">
+                            Active View
+                          </span>
+                        )}
+                        {index === 0 && !isActive && (
+                          <span className="rounded bg-market-accent/15 px-2 py-0.5 text-[10px] font-medium text-market-accent">
+                            Latest
+                          </span>
+                        )}
+                      </div>
+                      <p className="text-xs text-market-muted">
+                        {p.holdings.length} holdings · {p.source.toUpperCase()} ·{" "}
+                        {new Date(p.updatedAt).toLocaleDateString("en-IN", {
+                          day: "numeric",
+                          month: "short",
+                          year: "numeric",
+                        })}
+                      </p>
+                    </div>
+
+                    <div className="text-right shrink-0">
+                      <p className="text-sm font-medium text-market-text">
+                        {formatCurrency(stats?.currentValue ?? 0)}
+                      </p>
+                      {stats?.returns !== null && stats?.returns !== undefined && (
+                        <p
+                          className={`text-xs font-semibold ${
+                            stats.returns >= 0 ? "text-market-up" : "text-market-down"
+                          }`}
+                        >
+                          {stats.returns >= 0 ? "+" : ""}
+                          {stats.returns.toFixed(1)}%
+                        </p>
                       )}
                     </div>
-                    <p className="text-xs text-market-muted">
-                      {p.holdings.length} holdings · {p.source.toUpperCase()} ·{" "}
-                      {new Date(p.updatedAt).toLocaleDateString("en-IN", {
-                        day: "numeric",
-                        month: "short",
-                        year: "numeric",
-                      })}
-                    </p>
-                  </div>
+                  </Link>
                 </div>
 
-                <div className="flex items-center gap-4 text-right">
-                  <div>
-                    <p className="text-sm font-medium text-market-text">
-                      {formatCurrency(stats?.currentValue ?? 0)}
-                    </p>
-                    {stats?.returns !== null && stats?.returns !== undefined && (
-                      <p
-                        className={`text-xs font-semibold ${
-                          stats.returns >= 0 ? "text-market-up" : "text-market-down"
-                        }`}
-                      >
-                        {stats.returns >= 0 ? "+" : ""}
-                        {stats.returns.toFixed(1)}%
-                      </p>
-                    )}
-                  </div>
-
-                  {/* Individual Delete Action */}
-                  <button
-                    type="button"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      setConfirmSingleId(p.id);
-                    }}
-                    disabled={isDeleting}
-                    className="opacity-0 group-hover:opacity-100 hover:text-market-down text-market-muted/60 p-1.5 rounded-md hover:bg-market-down/10 transition-all duration-200 shrink-0"
-                    title="Delete portfolio"
-                  >
-                    <Trash2 className="h-4 w-4" />
-                  </button>
-                </div>
+                {/* Individual Delete Action */}
+                <button
+                  type="button"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setConfirmSingleId(p.id);
+                  }}
+                  disabled={isDeleting}
+                  className="opacity-0 group-hover:opacity-100 hover:text-market-down text-market-muted/60 p-1.5 rounded-md hover:bg-market-down/10 transition-all duration-200 shrink-0"
+                  title="Delete portfolio"
+                >
+                  <Trash2 className="h-4 w-4" />
+                </button>
               </div>
             );
           })}
