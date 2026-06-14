@@ -1,6 +1,6 @@
 "use client";
 
-import { Activity, Shield, Target } from "lucide-react";
+import { Activity, Shield, Target, TrendingUp, Zap, Award, Percent } from "lucide-react";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import type { FullAnalysis as FullAnalysisType } from "@/lib/analysis";
 
@@ -39,6 +39,31 @@ function ScoreRing({ score, label, color }: { score: number; label: string; colo
 }
 
 export function FullAnalysisView({ analysis }: FullAnalysisViewProps) {
+  // Determine Beta classification
+  let betaLabel = "Market Matching";
+  let betaColor = "text-market-accent bg-market-accent/10";
+  if (analysis.portfolioBeta < 0.8) {
+    betaLabel = "Low Risk / Defensive";
+    betaColor = "text-market-up bg-market-up/10";
+  } else if (analysis.portfolioBeta > 1.2) {
+    betaLabel = "High Beta / Aggressive";
+    betaColor = "text-market-down bg-market-down/10";
+  }
+
+  // Determine Sharpe classification
+  let sharpeLabel = "Adequate";
+  let sharpeColor = "text-market-muted bg-market-surface";
+  if (analysis.portfolioSharpe < 0) {
+    sharpeLabel = "Poor Risk-Adjusted Return";
+    sharpeColor = "text-market-down bg-market-down/10";
+  } else if (analysis.portfolioSharpe > 1.5) {
+    sharpeLabel = "Excellent";
+    sharpeColor = "text-market-up bg-market-up/10";
+  } else if (analysis.portfolioSharpe > 0.8) {
+    sharpeLabel = "Good";
+    sharpeColor = "text-market-up bg-market-up/10";
+  }
+
   return (
     <div className="space-y-5">
       <Card>
@@ -116,6 +141,155 @@ export function FullAnalysisView({ analysis }: FullAnalysisViewProps) {
           </CardContent>
         </Card>
       </div>
+
+      {/* Advanced Portfolio Ratios */}
+      <Card>
+        <CardHeader className="border-b border-market-border">
+          <CardTitle>Advanced Portfolio Ratios</CardTitle>
+        </CardHeader>
+        <CardContent className="pt-5">
+          <div className="grid gap-6 sm:grid-cols-4">
+            <div className="space-y-1.5 border-r border-market-border/40 last:border-0 pr-4">
+              <div className="flex items-center gap-2 text-market-muted">
+                <TrendingUp className="h-4 w-4 text-market-up" />
+                <span className="text-[10px] uppercase tracking-wide font-medium">Weighted Beta</span>
+              </div>
+              <p className="font-mono-nums text-2xl font-bold text-market-text">
+                {analysis.portfolioBeta}
+              </p>
+              <span className={`inline-block rounded px-1.5 py-0.5 text-[9px] font-semibold ${betaColor}`}>
+                {betaLabel}
+              </span>
+              <p className="text-[10px] text-market-muted pt-1">Sensitivity to NIFTY 50 returns.</p>
+            </div>
+
+            <div className="space-y-1.5 border-r border-market-border/40 last:border-0 pr-4">
+              <div className="flex items-center gap-2 text-market-muted">
+                <Award className="h-4 w-4 text-market-accent" />
+                <span className="text-[10px] uppercase tracking-wide font-medium">Sharpe Ratio</span>
+              </div>
+              <p className="font-mono-nums text-2xl font-bold text-market-text">
+                {analysis.portfolioSharpe}
+              </p>
+              <span className={`inline-block rounded px-1.5 py-0.5 text-[9px] font-semibold ${sharpeColor}`}>
+                {sharpeLabel}
+              </span>
+              <p className="text-[10px] text-market-muted pt-1">Risk-adjusted returns (above 7.0% bond yield).</p>
+            </div>
+
+            <div className="space-y-1.5 border-r border-market-border/40 last:border-0 pr-4">
+              <div className="flex items-center gap-2 text-market-muted">
+                <Zap className="h-4 w-4 text-market-warning" />
+                <span className="text-[10px] uppercase tracking-wide font-medium">Est. Volatility</span>
+              </div>
+              <p className="font-mono-nums text-2xl font-bold text-market-text">
+                {analysis.portfolioVolatility}%
+              </p>
+              <p className="text-[10px] text-market-muted pt-4">Weighted estimated annual fluctuation.</p>
+            </div>
+
+            <div className="space-y-1.5">
+              <div className="flex items-center gap-2 text-market-muted">
+                <Percent className="h-4 w-4 text-market-up" />
+                <span className="text-[10px] uppercase tracking-wide font-medium">Weighted Div. Yield</span>
+              </div>
+              <p className="font-mono-nums text-2xl font-bold text-market-text">
+                {analysis.portfolioDividendYield}%
+              </p>
+              <p className="text-[10px] text-market-muted pt-4">Weighted portfolio cash flow from dividends.</p>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Cap-Size Allocation */}
+      <Card>
+        <CardHeader className="border-b border-market-border">
+          <CardTitle>Cap-Size Distribution</CardTitle>
+        </CardHeader>
+        <CardContent className="pt-5">
+          <div className="space-y-5">
+            {/* Visual stacked bar */}
+            <div className="h-5 w-full flex rounded-full overflow-hidden bg-market-surface shadow-inner border border-market-border/40">
+              {analysis.capAllocation.large > 0 && (
+                <div
+                  className="bg-market-up h-full transition-all duration-300 relative group"
+                  style={{ width: `${analysis.capAllocation.large}%` }}
+                >
+                  <span className="sr-only">Large Cap: {analysis.capAllocation.large}%</span>
+                </div>
+              )}
+              {analysis.capAllocation.mid > 0 && (
+                <div
+                  className="bg-market-accent h-full transition-all duration-300 relative group"
+                  style={{ width: `${analysis.capAllocation.mid}%` }}
+                >
+                  <span className="sr-only">Mid Cap: {analysis.capAllocation.mid}%</span>
+                </div>
+              )}
+              {analysis.capAllocation.small > 0 && (
+                <div
+                  className="bg-market-warning h-full transition-all duration-300 relative group"
+                  style={{ width: `${analysis.capAllocation.small}%` }}
+                >
+                  <span className="sr-only">Small Cap: {analysis.capAllocation.small}%</span>
+                </div>
+              )}
+            </div>
+
+            {/* Legends */}
+            <div className="grid gap-4 sm:grid-cols-3 pt-2">
+              <div className="flex gap-3 items-start p-3 rounded-lg bg-market-surface/40 border border-market-border/30">
+                <span className="h-3 w-3 rounded-full bg-market-up mt-1 shrink-0" />
+                <div>
+                  <h4 className="text-xs font-semibold text-market-text">Large Cap ({analysis.capAllocation.large}%)</h4>
+                  <p className="text-[10px] text-market-muted mt-0.5">Highly stable blue-chips (e.g. Reliance, HDFC, TCS).</p>
+                </div>
+              </div>
+              <div className="flex gap-3 items-start p-3 rounded-lg bg-market-surface/40 border border-market-border/30">
+                <span className="h-3 w-3 rounded-full bg-market-accent mt-1 shrink-0" />
+                <div>
+                  <h4 className="text-xs font-semibold text-market-text">Mid Cap ({analysis.capAllocation.mid}%)</h4>
+                  <p className="text-[10px] text-market-muted mt-0.5">High growth potential, moderate volatility (e.g. Suzlon, BSE).</p>
+                </div>
+              </div>
+              <div className="flex gap-3 items-start p-3 rounded-lg bg-market-surface/40 border border-market-border/30">
+                <span className="h-3 w-3 rounded-full bg-market-warning mt-1 shrink-0" />
+                <div>
+                  <h4 className="text-xs font-semibold text-market-text">Small Cap ({analysis.capAllocation.small}%)</h4>
+                  <p className="text-[10px] text-market-muted mt-0.5">Aggressive micro-caps, extreme risk/reward (e.g. Marksans).</p>
+                </div>
+              </div>
+            </div>
+
+            {/* Advisory block */}
+            <div className="rounded-lg border border-market-border/60 bg-market-surface/20 p-4 text-xs text-market-muted leading-relaxed">
+              {analysis.capAllocation.large < 50 ? (
+                <p className="text-market-warning flex items-start gap-2">
+                  <Shield className="h-4.5 w-4.5 shrink-0 mt-0.5" />
+                  <span>
+                    <strong>Warning: Aggressive Cap Mix.</strong> Large-cap exposure is currently under 50% ({analysis.capAllocation.large}%). While mid/small caps offer faster growth, they are prone to severe drawdowns (30-50%) in bear markets. Consider rebalancing to quality blue-chips.
+                  </span>
+                </p>
+              ) : analysis.capAllocation.large > 85 ? (
+                <p className="text-market-accent flex items-start gap-2">
+                  <Shield className="h-4.5 w-4.5 shrink-0 mt-0.5" />
+                  <span>
+                    <strong>Tip: Highly Conservative.</strong> Over 85% of your portfolio is in large-caps. For optimal long-term wealth compounding, retail investors can comfortably allocate 15-25% to high-growth mid-caps or small-caps.
+                  </span>
+                </p>
+              ) : (
+                <p className="text-market-up flex items-start gap-2">
+                  <Shield className="h-4.5 w-4.5 shrink-0 mt-0.5" />
+                  <span>
+                    <strong>Optimal Distribution!</strong> Your Cap-size allocation has a healthy large-cap foundation ({analysis.capAllocation.large}%) backed by mid/small cap growth drivers. This structure aligns with standard institutional recommendations for retail portfolios.
+                  </span>
+                </p>
+              )}
+            </div>
+          </div>
+        </CardContent>
+      </Card>
     </div>
   );
 }

@@ -6,6 +6,7 @@ import {
   type StockFundamentals,
 } from "./market-data";
 import type { ParsedHolding } from "./csv-parser";
+import { formatCurrency } from "./utils";
 
 export interface EnrichedHolding {
   symbol: string;
@@ -45,6 +46,130 @@ export interface Suggestion {
   symbol?: string;
 }
 
+export interface StockRecommendation {
+  action: "ACCUMULATE" | "AVERAGE DOWN" | "HOLD" | "BOOK PROFITS" | "TRIM / REDUCE" | "SELL / EXIT";
+  actionColor: string;
+  badgeStyle: string;
+  technicalTip: string;
+  fundamentalTip: string;
+  verdict: string;
+}
+
+export function getStockRecommendation(h: EnrichedHolding): StockRecommendation {
+  const ltp = h.currentPrice;
+  const avg = h.avgPrice;
+  const ret = h.returnsPercent;
+  const f = h.fundamentals;
+
+  const support = Math.round(ltp * 0.94 * 100) / 100;
+  const resistance = Math.round(ltp * 1.06 * 100) / 100;
+  const stopLoss = Math.round(avg * 0.90 * 100) / 100;
+  const rsi = f ? Math.round(45 + f.momentumScore * 0.35) : 56;
+
+  if (f) {
+    // ---- CASE 1: HOLDING IS IN PROFIT (ret > 0) ----
+    if (ret > 0) {
+      // High RSI or high PE or high returns -> BOOK PROFITS
+      if (rsi > 70 || (ret > 25 && f.pe > 45)) {
+        return {
+          action: "BOOK PROFITS",
+          actionColor: "text-amber-400 border-amber-900/30",
+          badgeStyle: "bg-amber-950/20 text-amber-400 border-amber-900/40",
+          technicalTip: `Overbought momentum (RSI: ${rsi}). Price is trading near immediate resistance of ${formatCurrency(resistance)}.`,
+          fundamentalTip: f.pe > 0
+            ? `High valuation of P/E ${f.pe.toFixed(1)} suggests current growth assumptions are fully priced in.`
+            : `P/E is unavailable or negative; valuation cannot be structurally verified from current earnings.`,
+          verdict: `Consider booking partial profits (e.g. 20-30% of position) on ${h.symbol} at current peak. Reinvest gains into defensive or discounted options; avoid fresh buy entries here.`
+        };
+      }
+    } 
+    // ---- CASE 2: HOLDING IS IN LOSS (ret <= 0) ----
+    else {
+      // 2a. Severe loss (ret < -12%) + high-quality fundamentals -> AVERAGE DOWN
+      if (ret < -12 && f.roe > 15 && f.debtToEquity < 0.6 && f.profitGrowth > 5) {
+        return {
+          action: "AVERAGE DOWN",
+          actionColor: "text-emerald-400 border-emerald-900/30",
+          badgeStyle: "bg-emerald-950/20 text-emerald-400 border-emerald-900/40",
+          technicalTip: `Price is down ${Math.abs(ret).toFixed(1)}%, trading close to consolidation support at ${formatCurrency(support)}. RSI is cool at ${rsi}.`,
+          fundamentalTip: `Fundamentals remain excellent (ROE: ${f.roe}%, profit growth: +${f.profitGrowth}%, and low D/E: ${f.debtToEquity}).`,
+          verdict: `Strong case to average down on ${h.symbol}. High-quality business facing short-term price correction; accumulating at support lowers average cost basis for multi-year upside.`
+        };
+      }
+
+      // 2b. Severe loss (ret < -12%) + weak/declining fundamentals -> SELL / EXIT (Cut Losses)
+      if (ret < -12 && (f.roe < 8 || f.debtToEquity > 1.2 || f.profitGrowth <= 0)) {
+        return {
+          action: "SELL / EXIT",
+          actionColor: "text-red-400 border-red-900/30",
+          badgeStyle: "bg-red-950/20 text-red-400 border-red-900/40",
+          technicalTip: `Suggested Stop-Loss is breached. Price action is weak. Suggested Stop-Loss (SL) was near ${formatCurrency(stopLoss)}.`,
+          fundamentalTip: `Weakening earnings growth (${f.profitGrowth}% y-o-y) or low capital efficiency (ROE: ${f.roe}%) elevates balance-sheet risks.`,
+          verdict: `We recommend cutting losses and exiting or reducing exposure in ${h.symbol}. Severe loss of ${Math.abs(ret).toFixed(1)}% combined with weak profit growth/leverage indicates capital is better deployed in stronger peers.`
+        };
+      }
+
+      // 2c. Overbought but in loss -> HOLD (AVOID FRESH BUYING)
+      if (rsi > 70) {
+        return {
+          action: "HOLD",
+          actionColor: "text-amber-400 border-amber-900/30",
+          badgeStyle: "bg-amber-950/10 text-amber-400 border-amber-900/30",
+          technicalTip: `Stock has seen a short-term rally (RSI: ${rsi} is overbought) but you are sitting at a loss of ${Math.abs(ret).toFixed(1)}%.`,
+          fundamentalTip: `Company has moderate fundamentals (ROE: ${f.roe}%, P/E: ${f.pe.toFixed(1)}).`,
+          verdict: `Hold ${h.symbol} and avoid buying more at this short-term peak. The stock is overbought on charts, so wait for a price pullback or fundamental trend reversal before decision-making.`
+        };
+      }
+
+      // 2d. Low RSI / oversold -> ACCUMULATE
+      if (rsi < 40) {
+        return {
+          action: "ACCUMULATE",
+          actionColor: "text-blue-400 border-blue-900/30",
+          badgeStyle: "bg-blue-950/20 text-blue-400 border-blue-900/40",
+          technicalTip: `Consolidating in accumulation zone (RSI: ${rsi}). Current price is near key support of ${formatCurrency(support)}.`,
+          fundamentalTip: `Decent fundamentals with ROE of ${f.roe}% and comfortable debt levels. Valuations (P/E: ${f.pe.toFixed(1)}) are attractive.`,
+          verdict: `Accumulate ${h.symbol} in a SIP or staggered format. Strong support levels and stable fundamentals represent an attractive risk-reward profile.`
+        };
+      }
+    }
+  } else {
+    // If no fundamentals (untracked stock), fall back to price-action rules
+    if (ret < -15) {
+      return {
+        action: "SELL / EXIT",
+        actionColor: "text-red-400 border-red-900/30",
+        badgeStyle: "bg-red-950/20 text-red-400 border-red-900/40",
+        technicalTip: `Down trend is persistent (returns: ${ret.toFixed(1)}%). Stock is trading below short-term averages. Stop Loss at ${formatCurrency(stopLoss)} is recommended.`,
+        fundamentalTip: `No fundamental data tracked for this custom instrument.`,
+        verdict: `Consider exiting or trimming your position in ${h.symbol} to prevent further capital erosion. Price is in a strong downward trend.`
+      };
+    }
+    if (ret > 30) {
+      return {
+        action: "BOOK PROFITS",
+        actionColor: "text-amber-400 border-amber-900/30",
+        badgeStyle: "bg-amber-950/20 text-amber-400 border-amber-900/40",
+        technicalTip: `Strong run-up of ${ret.toFixed(1)}%. Immediate resistance is estimated at ${formatCurrency(resistance)}.`,
+        fundamentalTip: `No fundamental data tracked for this custom instrument.`,
+        verdict: `Lock in profits on ${h.symbol}. Having risen ${ret.toFixed(1)}% without structural data backing, it is wise to secure capital.`
+      };
+    }
+  }
+
+  // 5. Default -> HOLD
+  return {
+    action: "HOLD",
+    actionColor: "text-amber-400 border-amber-900/30",
+    badgeStyle: "bg-amber-950/10 text-amber-400 border-amber-900/30",
+    technicalTip: `Steady price action (RSI: ${rsi}). Trading comfortably between support at ${formatCurrency(support)} and resistance at ${formatCurrency(resistance)}.`,
+    fundamentalTip: f 
+      ? `Stable fundamentals (ROE: ${f.roe}%, profit growth: +${f.profitGrowth}%) warrant position holding.`
+      : `No adverse price cues. Position is running neutral.`,
+    verdict: `Hold your current position in ${h.symbol}. The stock is tracking standard indices, showing neutral momentum and stable parameters. No urgent rebalancing required.`
+  };
+}
+
 export interface BasicAnalysis {
   totalInvested: number;
   totalValue: number;
@@ -68,6 +193,11 @@ export interface FullAnalysis extends BasicAnalysis {
   trendBreakdown: { bullish: number; neutral: number; bearish: number };
   peAnalysis: { avgPE: number; vsMarket: string };
   concentrationRisk: { top3Weight: number; top5Weight: number };
+  portfolioBeta: number;
+  portfolioVolatility: number;
+  portfolioSharpe: number;
+  portfolioDividendYield: number;
+  capAllocation: { large: number; mid: number; small: number };
 }
 
 const SECTOR_COLORS: Record<string, string> = {
@@ -251,26 +381,37 @@ function generateBasicSuggestions(
     .sort((a, b) => a.returnsPercent - b.returnsPercent)
     .slice(0, 2);
   for (const h of laggards) {
+    const rec = getStockRecommendation(h);
+    let type: Suggestion["type"] = "review";
+    let priority: Suggestion["priority"] = "medium";
+    if (rec.action === "SELL / EXIT" || rec.action === "TRIM / REDUCE") {
+      type = "reduce";
+      priority = "high";
+    } else if (rec.action === "AVERAGE DOWN" || rec.action === "ACCUMULATE") {
+      type = "increase";
+      priority = "medium";
+    }
     suggestions.push({
-      type: "review",
-      priority: "medium",
-      title: `Review ${h.symbol} — down ${Math.abs(h.returnsPercent).toFixed(1)}%`,
-      description: `${h.symbol} is your worst performer by returns. Review whether to hold, average down, or exit.`,
+      type,
+      priority,
+      title: `${rec.action}: ${h.symbol} (Down ${Math.abs(h.returnsPercent).toFixed(1)}%)`,
+      description: `${rec.verdict} Technical Remarks: ${rec.technicalTip}`,
       symbol: h.symbol,
     });
   }
 
   const outperformers = [...holdings]
-    .filter((h) => h.returnsPercent > 25)
+    .filter((h) => h.returnsPercent > 20)
     .sort((a, b) => b.returnsPercent - a.returnsPercent)
-    .slice(0, 1);
+    .slice(0, 2);
   for (const h of outperformers) {
-    if (h.weight > 10) {
+    const rec = getStockRecommendation(h);
+    if (rec.action === "BOOK PROFITS") {
       suggestions.push({
         type: "reduce",
-        priority: "low",
-        title: `Book partial profits on ${h.symbol}`,
-        description: `${h.symbol} is up ${h.returnsPercent.toFixed(1)}% and is ${h.weight.toFixed(1)}% of portfolio. Consider booking 20–30% gains and redeploying.`,
+        priority: "medium",
+        title: `BOOK PROFITS: ${h.symbol} (Up ${h.returnsPercent.toFixed(1)}%)`,
+        description: `${rec.verdict} Technical Remarks: ${rec.technicalTip}`,
         symbol: h.symbol,
       });
     }
@@ -354,7 +495,12 @@ export async function analyzeBasic(holdings: ParsedHolding[]): Promise<BasicAnal
 
 function generateFullSuggestions(
   holdings: EnrichedHolding[],
-  niftyYearReturn: number = BENCHMARKS.nifty50.yearReturn
+  niftyYearReturn: number = BENCHMARKS.nifty50.yearReturn,
+  extra?: {
+    portfolioBeta: number;
+    portfolioSharpe: number;
+    capAllocation: { large: number; mid: number; small: number };
+  }
 ): Suggestion[] {
   const suggestions: Suggestion[] = [];
   const sorted = [...holdings].sort((a, b) => b.weight - a.weight);
@@ -388,56 +534,103 @@ function generateFullSuggestions(
 
   // Individual stock analysis
   for (const h of holdings) {
-    if (!h.fundamentals) continue;
-    const f = h.fundamentals;
+    const rec = getStockRecommendation(h);
 
     if (h.weight > 25) {
       suggestions.push({
         type: "rebalance",
         priority: "high",
-        title: `Trim ${h.symbol} position`,
-        description: `${h.symbol} is ${h.weight.toFixed(1)}% of portfolio. Single stock exposure above 20% increases risk significantly.`,
+        title: `Trim ${h.symbol} Position (Overweight)`,
+        description: `${h.symbol} makes up ${h.weight.toFixed(1)}% of your portfolio. Single-stock exposure above 20% adds significant risk. Recommendation: ${rec.verdict}`,
         symbol: h.symbol,
       });
+      continue;
     }
 
-    if (f.trend === "bearish" && h.weight > 5) {
+    if (rec.action === "SELL / EXIT") {
       suggestions.push({
-        type: "review",
-        priority: "medium",
-        title: `Review ${h.symbol} — bearish trend`,
-        description: `${h.symbol} shows bearish momentum (score: ${f.momentumScore}/100). Review fundamentals before adding more.`,
+        type: "reduce",
+        priority: "high",
+        title: `SELL / EXIT Alert: ${h.symbol}`,
+        description: `${rec.verdict} Technical view: ${rec.technicalTip}`,
         symbol: h.symbol,
       });
-    }
-
-    if (f.pe > 50 && h.weight > 8) {
+    } else if (rec.action === "BOOK PROFITS") {
       suggestions.push({
         type: "reduce",
         priority: "medium",
-        title: `${h.symbol} — high valuation`,
-        description: `P/E of ${f.pe} is significantly above market average. Consider partial profit booking.`,
+        title: `BOOK PROFITS: ${h.symbol}`,
+        description: `${rec.verdict} Technical view: ${rec.technicalTip}`,
         symbol: h.symbol,
       });
-    }
-
-    if (f.momentumScore > 75 && f.trend === "bullish" && h.weight < 5) {
+    } else if (rec.action === "AVERAGE DOWN") {
+      suggestions.push({
+        type: "increase",
+        priority: "medium",
+        title: `AVERAGE DOWN: ${h.symbol}`,
+        description: `${rec.verdict} Technical view: ${rec.technicalTip}`,
+        symbol: h.symbol,
+      });
+    } else if (rec.action === "ACCUMULATE") {
       suggestions.push({
         type: "increase",
         priority: "low",
-        title: `Consider increasing ${h.symbol}`,
-        description: `Strong momentum (${f.momentumScore}/100) and bullish trend. Currently underweight at ${h.weight.toFixed(1)}%.`,
+        title: `ACCUMULATE: ${h.symbol}`,
+        description: `${rec.verdict} Technical view: ${rec.technicalTip}`,
         symbol: h.symbol,
       });
-    }
-
-    if (f.debtToEquity > 1.5) {
+    } else if (h.fundamentals && h.fundamentals.debtToEquity > 1.5) {
       suggestions.push({
         type: "review",
         priority: "medium",
-        title: `${h.symbol} — high debt`,
-        description: `Debt-to-equity ratio of ${f.debtToEquity} is elevated. Monitor interest coverage and cash flows.`,
+        title: `High Debt Alert: ${h.symbol}`,
+        description: `${h.symbol} has a high debt-to-equity ratio of ${h.fundamentals.debtToEquity}. ${rec.fundamentalTip}`,
         symbol: h.symbol,
+      });
+    }
+  }
+
+  // Cap-size and portfolio metrics suggestions
+  if (extra) {
+    const smallAndMid = extra.capAllocation.mid + extra.capAllocation.small;
+    if (smallAndMid > 55) {
+      suggestions.push({
+        type: "diversify",
+        priority: "high",
+        title: `Heavy Small & Mid Cap exposure (${smallAndMid.toFixed(1)}%)`,
+        description: "Your portfolio is heavily exposed to mid & small-caps. Consider allocating at least 50% to large-cap core stocks to buffer market volatility.",
+      });
+    } else if (extra.capAllocation.large > 85) {
+      suggestions.push({
+        type: "diversify",
+        priority: "low",
+        title: `High Large Cap skew (${extra.capAllocation.large.toFixed(1)}%)`,
+        description: "Your portfolio is almost entirely large-caps. Consider adding 15-20% high-quality mid-caps or small-caps for higher growth.",
+      });
+    }
+
+    if (extra.portfolioBeta > 1.3) {
+      suggestions.push({
+        type: "rebalance",
+        priority: "high",
+        title: `High Beta Volatility (Beta: ${extra.portfolioBeta})`,
+        description: "Your portfolio beta is aggressive. Consider adding defensive large-cap IT or FMCG stocks (e.g. TCS, HINDUNILVR) to lower risk.",
+      });
+    } else if (extra.portfolioBeta < 0.7) {
+      suggestions.push({
+        type: "increase",
+        priority: "low",
+        title: `Defensive Portfolio (Beta: ${extra.portfolioBeta})`,
+        description: "Your portfolio is defensive and might underperform in a bull run. Consider adding growth or index momentum stocks to boost potential.",
+      });
+    }
+
+    if (extra.portfolioSharpe < 0 && holdings.length > 0) {
+      suggestions.push({
+        type: "review",
+        priority: "high",
+        title: `Negative Sharpe Ratio (${extra.portfolioSharpe})`,
+        description: "Your risk-adjusted returns are lower than risk-free assets (7.0%). Review holdings to weed out consistent laggards.",
       });
     }
   }
@@ -494,6 +687,10 @@ export async function analyzeFull(holdings: ParsedHolding[]): Promise<FullAnalys
   const benchmarks = await getLiveBenchmarks();
 
   const withFundamentals = enriched.filter((h) => h.fundamentals);
+  const withValidFundamentals = enriched.filter(
+    (h) => h.fundamentals && h.fundamentals.pe > 0 && h.fundamentals.roe > 0
+  );
+
   const momentumScore =
     withFundamentals.length > 0
       ? withFundamentals.reduce((s, h) => s + (h.fundamentals?.momentumScore || 0), 0) /
@@ -501,8 +698,8 @@ export async function analyzeFull(holdings: ParsedHolding[]): Promise<FullAnalys
       : 50;
 
   const fundamentalScore =
-    withFundamentals.length > 0
-      ? withFundamentals.reduce((s, h) => {
+    withValidFundamentals.length > 0
+      ? withValidFundamentals.reduce((s, h) => {
           const f = h.fundamentals!;
           let score = 50;
           if (f.roe > 15) score += 15;
@@ -510,7 +707,7 @@ export async function analyzeFull(holdings: ParsedHolding[]): Promise<FullAnalys
           if (f.debtToEquity < 0.5) score += 10;
           if (f.profitGrowth > 10) score += 15;
           return s + Math.min(score, 100);
-        }, 0) / withFundamentals.length
+        }, 0) / withValidFundamentals.length
       : 50;
 
   const sorted = [...enriched].sort((a, b) => b.weight - a.weight);
@@ -542,10 +739,57 @@ export async function analyzeFull(holdings: ParsedHolding[]): Promise<FullAnalys
   }
 
   const avgPE =
-    withFundamentals.length > 0
-      ? withFundamentals.reduce((s, h) => s + (h.fundamentals?.pe || 0), 0) /
-        withFundamentals.length
+    withValidFundamentals.length > 0
+      ? withValidFundamentals.reduce((s, h) => s + (h.fundamentals?.pe || 0), 0) /
+        withValidFundamentals.length
       : 0;
+
+  // Cap Allocation Calculations
+  let largeWeight = 0;
+  let midWeight = 0;
+  let smallWeight = 0;
+
+  for (const h of enriched) {
+    const cap = h.fundamentals?.capSize || "mid";
+    if (cap === "large") largeWeight += h.weight;
+    else if (cap === "mid") midWeight += h.weight;
+    else if (cap === "small") smallWeight += h.weight;
+  }
+
+  const capAllocation = {
+    large: Math.round(largeWeight * 10) / 10,
+    mid: Math.round(midWeight * 10) / 10,
+    small: Math.round(smallWeight * 10) / 10,
+  };
+
+  // Weighted Beta and Volatility/Sharpe Calculations
+  let weightedBetaSum = 0;
+  let weightedDivYieldSum = 0;
+
+  for (const h of enriched) {
+    const beta = h.fundamentals?.beta ?? 1.0;
+    const divYield = h.fundamentals?.dividendYield ?? 0;
+    weightedBetaSum += (h.weight * beta) / 100;
+    weightedDivYieldSum += (h.weight * divYield) / 100;
+  }
+
+  const portfolioBeta = Math.round(weightedBetaSum * 100) / 100;
+  const portfolioDividendYield = Math.round(weightedDivYieldSum * 100) / 100;
+
+  const indexVolatility = 15.2; // standard Nifty 50 volatility
+  const portfolioVolatility = Math.round(indexVolatility * portfolioBeta * 10) / 10;
+
+  const portfolioReturn = basic.totalReturnsPercent;
+  const riskFreeRate = 7.0; // Indian 10-year G-Sec yield
+  const portfolioSharpe = portfolioVolatility > 0
+    ? Math.round(((portfolioReturn - riskFreeRate) / portfolioVolatility) * 100) / 100
+    : 0;
+
+  const suggestions = generateFullSuggestions(enriched, benchmarks.nifty50.yearReturn, {
+    portfolioBeta,
+    portfolioSharpe,
+    capAllocation,
+  });
 
   return {
     ...basic,
@@ -554,15 +798,20 @@ export async function analyzeFull(holdings: ParsedHolding[]): Promise<FullAnalys
     riskScore: Math.round(riskScore),
     diversificationScore: Math.round(diversificationScore),
     overallHealthScore,
-    suggestions: generateFullSuggestions(enriched, benchmarks.nifty50.yearReturn),
+    suggestions,
     trendBreakdown,
     peAnalysis: {
       avgPE: Math.round(avgPE * 10) / 10,
-      vsMarket: avgPE > 25 ? "Above market average" : avgPE > 0 ? "Below market average" : "N/A",
+      vsMarket: avgPE > 28 ? "Above market average" : avgPE > 0 ? "Below market average" : "N/A",
     },
     concentrationRisk: {
       top3Weight: Math.round(top3Weight * 10) / 10,
       top5Weight: Math.round(top5Weight * 10) / 10,
     },
+    portfolioBeta,
+    portfolioVolatility,
+    portfolioSharpe,
+    portfolioDividendYield,
+    capAllocation,
   };
 }
