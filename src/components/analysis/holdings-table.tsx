@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, Fragment } from "react";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { formatCurrency, formatPercent, formatNumber } from "@/lib/utils";
 import { EnrichedHolding, getStockRecommendation } from "@/lib/analysis";
@@ -119,9 +119,8 @@ export function HoldingsTable({ holdings, showFundamentals }: HoldingsTableProps
               }
 
               return (
-                <>
+                <Fragment key={h.symbol}>
                   <tr
-                    key={h.symbol}
                     onClick={() => setExpandedSymbol(isExpanded ? null : h.symbol)}
                     className={`border-b border-market-border/50 hover:bg-market-surface/40 transition-all duration-200 cursor-pointer select-none ${
                       isExpanded ? "bg-market-surface/30" : ""
@@ -378,7 +377,7 @@ export function HoldingsTable({ holdings, showFundamentals }: HoldingsTableProps
                       </td>
                     </tr>
                   )}
-                </>
+                </Fragment>
               );
             })}
           </tbody>

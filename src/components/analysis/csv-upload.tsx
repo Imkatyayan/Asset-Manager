@@ -88,6 +88,9 @@ export function CsvUpload({ onUpload, loading, initialFileName }: CsvUploadProps
   const [dragOver, setDragOver] = useState(false);
   const [fileName, setFileName] = useState<string | null>(initialFileName ?? null);
   const [error, setError] = useState<string | null>(null);
+  const [parsing, setParsing] = useState(false);
+
+  const isProgress = loading || parsing;
 
   useEffect(() => {
     if (initialFileName) setFileName(initialFileName);
@@ -113,8 +116,7 @@ export function CsvUpload({ onUpload, loading, initialFileName }: CsvUploadProps
       const ext = file.name.toLowerCase().slice(file.name.lastIndexOf("."));
       if (ext === ".xlsx" || ext === ".xls") {
         try {
-          // Trigger parsing state
-          onUpload("", file.name); 
+          setParsing(true);
           const XLSX = await loadSheetJS();
           const buffer = await file.arrayBuffer();
           const workbook = XLSX.read(buffer, { type: "array" });
@@ -135,6 +137,8 @@ export function CsvUpload({ onUpload, loading, initialFileName }: CsvUploadProps
         } catch (err: unknown) {
           const msg = err instanceof Error ? err.message : "Failed to process the Excel spreadsheet.";
           setError(msg);
+        } finally {
+          setParsing(false);
         }
         return;
       }
@@ -175,7 +179,7 @@ export function CsvUpload({ onUpload, loading, initialFileName }: CsvUploadProps
           dragOver
             ? "border-market-up bg-emerald-950/20"
             : "border-market-border bg-market-card hover:border-market-up/40",
-          loading && "pointer-events-none opacity-60"
+          isProgress && "pointer-events-none opacity-60"
         )}
       >
         <input
@@ -187,7 +191,7 @@ export function CsvUpload({ onUpload, loading, initialFileName }: CsvUploadProps
             if (file) handleFile(file);
             e.target.value = "";
           }}
-          disabled={loading}
+          disabled={isProgress}
         />
 
         <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-market-surface">
@@ -205,7 +209,7 @@ export function CsvUpload({ onUpload, loading, initialFileName }: CsvUploadProps
           Drop CSV or Excel from CDSL · NSDL · Zerodha · Groww · any broker
         </p>
 
-        {loading && (
+        {isProgress && (
           <div className="mt-4 flex items-center justify-center gap-2 text-sm text-market-up">
             <div className="h-4 w-4 animate-spin rounded-full border-2 border-market-up border-t-transparent" />
             Parsing & analyzing...
