@@ -31,6 +31,8 @@ const SYMBOL_KEYS = [
   "instrument",
   "nse symbol",
   "bse symbol",
+  "stock symbol",
+  "ticker symbol",
 ];
 
 const NAME_KEYS = [
@@ -63,6 +65,10 @@ const QTY_KEYS = [
   "number of shares",
   "free balance",
   "total qty",
+  "vol",
+  "volume",
+  "net qty",
+  "net quantity",
 ];
 
 const AVG_PRICE_KEYS = [
@@ -79,6 +85,12 @@ const AVG_PRICE_KEYS = [
   "buy avg",
   "purchase rate",
   "average_price",
+  "avg rate",
+  "average rate",
+  "buy rate",
+  "avg buy rate",
+  "average buy rate",
+  "cost per share",
 ];
 
 const LTP_KEYS = [
@@ -90,6 +102,11 @@ const LTP_KEYS = [
   "close price",
   "closing price",
   "last",
+  "last rate",
+  "current rate",
+  "market rate",
+  "close rate",
+  "cmp",
 ];
 
 const INVESTED_VALUE_KEYS = [
@@ -99,6 +116,11 @@ const INVESTED_VALUE_KEYS = [
   "cost value",
   "amount invested",
   "total invested",
+  "buy value",
+  "purchase value",
+  "investment",
+  "invested",
+  "total cost",
 ];
 
 const CURRENT_VALUE_KEYS = [
@@ -109,45 +131,17 @@ const CURRENT_VALUE_KEYS = [
   "holding value",
   "portfolio value",
   "value",
+  "closing value",
+  "latest value",
+  "current amt",
+  "current amount",
 ];
 
-const COMPANY_TO_SYMBOL: Record<string, string> = {
-  RELIANCE: "RELIANCE",
-  "RELIANCE INDUSTRIES": "RELIANCE",
-  "RELIANCE INDUSTRIES LTD": "RELIANCE",
-  TCS: "TCS",
-  "TATA CONSULTANCY": "TCS",
-  "TATA CONSULTANCY SERVICES": "TCS",
-  HDFC: "HDFCBANK",
-  "HDFC BANK": "HDFCBANK",
-  INFOSYS: "INFY",
-  INFY: "INFY",
-  ICICI: "ICICIBANK",
-  "ICICI BANK": "ICICIBANK",
-  BHARTI: "BHARTIARTL",
-  "BHARTI AIRTEL": "BHARTIARTL",
-  ITC: "ITC",
-  SBI: "SBIN",
-  "STATE BANK": "SBIN",
-  "STATE BANK OF INDIA": "SBIN",
-  HUL: "HINDUNILVR",
-  "HINDUSTAN UNILEVER": "HINDUNILVR",
-  KOTAK: "KOTAKBANK",
-  "KOTAK MAHINDRA": "KOTAKBANK",
-  WIPRO: "WIPRO",
-  MARUTI: "MARUTI",
-  "MARUTI SUZUKI": "MARUTI",
-  SUN: "SUNPHARMA",
-  "SUN PHARMA": "SUNPHARMA",
-  LARSEN: "LT",
-  "L AND T": "LT",
-  AXIS: "AXISBANK",
-  "AXIS BANK": "AXISBANK",
-};
 
 function normalizeKey(key: string): string {
   return key
     .replace(/^\ufeff/, "")
+    .replace(/\u0000/g, "")
     .toLowerCase()
     .trim()
     .replace(/[_\-./]+/g, " ")
@@ -233,41 +227,37 @@ function resolveSymbol(
   if (symbolCol && row[symbolCol]) {
     const sym = String(row[symbolCol]).trim().toUpperCase();
     if (sym.startsWith("INE") && sym.length >= 12) {
-      // ISIN in symbol column — resolve via name
-      if (nameCol && row[nameCol]) return nameFromCompany(String(row[nameCol]));
       return sym;
     }
     return sym.replace(/\.(NS|BO|NSE|BSE)$/i, "").replace(/\s+/g, "");
   }
 
   if (isinCol && row[isinCol]) {
-    if (nameCol && row[nameCol]) return nameFromCompany(String(row[nameCol]));
+    const isin = String(row[isinCol]).trim().toUpperCase();
+    if (isin.startsWith("INE") && isin.length >= 12) {
+      return isin;
+    }
   }
 
   if (nameCol && row[nameCol]) {
-    return nameFromCompany(String(row[nameCol]));
+    return String(row[nameCol]).trim();
   }
 
   return "UNKNOWN";
 }
 
-function nameFromCompany(name: string): string {
-  const upper = name.toUpperCase().trim();
-
-  if (COMPANY_TO_SYMBOL[upper]) return COMPANY_TO_SYMBOL[upper];
-
-  for (const [key, symbol] of Object.entries(COMPANY_TO_SYMBOL)) {
-    if (upper.includes(key) || key.includes(upper.split(" ")[0])) {
-      return symbol;
-    }
-  }
-
-  // First word if it looks like a ticker (all caps, short)
-  const first = upper.split(/[\s,.-]+/)[0];
-  if (first.length <= 12 && /^[A-Z0-9&]+$/.test(first)) return first;
-
-  return upper.split(" ")[0];
-}
+const PNL_KEYS = [
+  "p&l",
+  "pnl",
+  "unrealised p&l",
+  "unrealised pnl",
+  "realised p&l",
+  "realised pnl",
+  "profit and loss",
+  "profit/loss",
+  "gain/loss",
+  "gains/losses",
+];
 
 export type SourceType = "cdsl" | "nsdl" | "zerodha" | "groww" | "generic";
 
@@ -277,7 +267,12 @@ export function detectSource(headers: string[]): SourceType {
     return "cdsl";
   if (joined.includes("nsdl") || joined.includes("client id")) return "nsdl";
   if (joined.includes("tradingsymbol") || joined.includes("exchange")) return "zerodha";
-  if (joined.includes("groww") || joined.includes("folio") || joined.includes("avg buy"))
+  if (
+    joined.includes("groww") ||
+    joined.includes("folio") ||
+    joined.includes("avg buy") ||
+    (joined.includes("average buy price") && joined.includes("isin"))
+  )
     return "groww";
   return "generic";
 }
@@ -301,11 +296,13 @@ function scoreHeaderLine(line: string): number {
     ...LTP_KEYS,
     ...INVESTED_VALUE_KEYS,
     ...CURRENT_VALUE_KEYS,
+    ...PNL_KEYS,
   ];
 
   for (const part of parts) {
+    if (!part) continue;
     for (const c of allCandidates) {
-      if (part === c || part.includes(c) || c.includes(part)) {
+      if (part === c || part.includes(c)) {
         score += 2;
         break;
       }
@@ -319,18 +316,18 @@ function findHeaderRowIndex(lines: string[]): number {
   let bestIdx = 0;
   let bestScore = 0;
 
-  for (let i = 0; i < Math.min(lines.length, 30); i++) {
+  for (let i = 0; i < Math.min(lines.length, 300); i++) {
     const line = lines[i].trim();
     if (!line) continue;
 
     const score = scoreHeaderLine(line);
+    console.log(`[CSV Debug] Line ${i}: Score = ${score} | content = "${line.slice(0, 70)}"`);
     if (score > bestScore) {
       bestScore = score;
       bestIdx = i;
     }
   }
 
-  // Need at least 2 recognizable columns
   return bestScore >= 4 ? bestIdx : 0;
 }
 
@@ -358,7 +355,9 @@ function preprocessCSV(rawContent: string): { content: string; headerRow: number
     // Already mangled — can't recover easily
   }
 
-  const lines = content.split("\n").filter((l) => l.trim());
+  // Filter lines that contain at least one alphanumeric character (letter or number).
+  // This safely discards empty lines, blank delimited rows (e.g. ",,,,,,,"), and formatting separators.
+  const lines = content.split("\n").filter((l) => /[a-zA-Z0-9]/.test(l));
   if (lines.length === 0) return { content, headerRow: 0 };
 
   const headerRow = findHeaderRowIndex(lines);

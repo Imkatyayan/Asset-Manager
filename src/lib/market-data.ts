@@ -655,15 +655,32 @@ export async function enrichHoldingAsync(
   liveQuotes?: Map<string, import("./yahoo-finance").YahooQuote>
 ): Promise<EnrichedHoldingData> {
   const normalized = symbol.toUpperCase().replace(/\.(NS|BO|NSE|BSE)$/i, "");
-  const staticStock = getStockData(normalized);
+  let staticStock = getStockData(normalized);
 
-  const { toYahooSymbol, fetchQuotes, fetchYearReturn } = await import("./yahoo-finance");
-  const yahooSymbol = toYahooSymbol(normalized);
+  const { toYahooSymbol, fetchQuotes, fetchYearReturn, searchSymbols } = await import("./yahoo-finance");
 
-  let quote = liveQuotes?.get(yahooSymbol);
+  let resolvedSymbol = normalized;
+  let resolvedYahooSymbol = toYahooSymbol(normalized);
+  let resolvedName = symbol;
+
+  if (!staticStock) {
+    try {
+      const searchHits = await searchSymbols(normalized, 1);
+      if (searchHits[0]) {
+        resolvedSymbol = searchHits[0].symbol;
+        resolvedYahooSymbol = searchHits[0].yahooSymbol;
+        resolvedName = searchHits[0].name;
+        staticStock = getStockData(resolvedSymbol);
+      }
+    } catch (err) {
+      console.error("Dynamic symbol search failed for query:", normalized, err);
+    }
+  }
+
+  let quote = liveQuotes?.get(resolvedYahooSymbol);
   if (!quote) {
     try {
-      const quotes = await fetchQuotes([yahooSymbol]);
+      const quotes = await fetchQuotes([resolvedYahooSymbol]);
       quote = quotes[0];
     } catch {
       return enrichHolding(symbol, avgPrice);
@@ -674,7 +691,7 @@ export async function enrichHoldingAsync(
 
   let yearReturn: number | null = null;
   try {
-    yearReturn = await fetchYearReturn(yahooSymbol);
+    yearReturn = await fetchYearReturn(resolvedYahooSymbol);
   } catch {
     // keep static year return if chart fetch fails
   }
@@ -692,8 +709,8 @@ export async function enrichHoldingAsync(
 
   const momentum = yearReturn != null ? deriveMomentum(yearReturn) : { momentumScore: 50, trend: "neutral" as const };
   const fundamentals: StockFundamentals = {
-    symbol: normalized,
-    name: quote.name,
+    symbol: resolvedSymbol,
+    name: quote.name || resolvedName,
     sector: "Unknown",
     currentPrice: quote.price,
     pe: 0,
@@ -711,8 +728,8 @@ export async function enrichHoldingAsync(
   };
 
   return {
-    symbol: normalized,
-    name: quote.name,
+    symbol: resolvedSymbol,
+    name: quote.name || resolvedName,
     sector: "Unknown",
     currentPrice: quote.price,
     fundamentals,
@@ -722,9 +739,32 @@ export async function enrichHoldingAsync(
 export async function enrichHoldingsBatch(
   holdings: Array<{ symbol: string; avgPrice: number }>
 ): Promise<EnrichedHoldingData[]> {
-  const { toYahooSymbol, fetchQuotes } = await import("./yahoo-finance");
+  const { toYahooSymbol, fetchQuotes, searchSymbols } = await import("./yahoo-finance");
 
-  const yahooSymbols = holdings.map((h) => toYahooSymbol(h.symbol));
+  // First, resolve all non-standard symbols or ISINs dynamically
+  const resolvedHoldings = await Promise.all(
+    holdings.map(async (h) => {
+      const normalized = h.symbol.toUpperCase().replace(/\.(NS|BO|NSE|BSE)$/i, "");
+      const staticStock = getStockData(normalized);
+      if (staticStock) {
+        return { originalSymbol: h.symbol, resolvedSymbol: staticStock.symbol, avgPrice: h.avgPrice };
+      }
+
+      // Try dynamic search via Yahoo API
+      try {
+        const searchHits = await searchSymbols(normalized, 1);
+        if (searchHits[0]) {
+          return { originalSymbol: h.symbol, resolvedSymbol: searchHits[0].symbol, avgPrice: h.avgPrice };
+        }
+      } catch (err) {
+        console.error("Dynamic symbol search failed for query in batch:", normalized, err);
+      }
+
+      return { originalSymbol: h.symbol, resolvedSymbol: normalized, avgPrice: h.avgPrice };
+    })
+  );
+
+  const yahooSymbols = resolvedHoldings.map((h) => toYahooSymbol(h.resolvedSymbol));
   let quoteMap = new Map<string, import("./yahoo-finance").YahooQuote>();
 
   try {
@@ -735,8 +775,8 @@ export async function enrichHoldingsBatch(
   }
 
   const results = await Promise.all(
-    holdings.map(async (h) => {
-      const yahooSymbol = toYahooSymbol(h.symbol);
+    resolvedHoldings.map(async (h) => {
+      const yahooSymbol = toYahooSymbol(h.resolvedSymbol);
       if (!quoteMap.has(yahooSymbol)) {
         try {
           const single = await fetchQuotes([yahooSymbol]);
@@ -745,7 +785,7 @@ export async function enrichHoldingsBatch(
           // fall through to enrichHolding fallback
         }
       }
-      return enrichHoldingAsync(h.symbol, h.avgPrice, quoteMap);
+      return enrichHoldingAsync(h.originalSymbol, h.avgPrice, quoteMap);
     })
   );
 

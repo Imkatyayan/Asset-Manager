@@ -15,14 +15,57 @@ const ACCEPTED_TYPES = [
   "text/plain",
   "application/csv",
   "application/vnd.ms-excel",
+  "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
   "application/octet-stream",
 ];
 
-const ACCEPTED_EXTENSIONS = [".csv", ".txt"];
+const ACCEPTED_EXTENSIONS = [".csv", ".txt", ".xlsx", ".xls"];
 
 function isAcceptedFile(file: File): boolean {
   const ext = file.name.toLowerCase().slice(file.name.lastIndexOf("."));
   return ACCEPTED_EXTENSIONS.includes(ext) || ACCEPTED_TYPES.includes(file.type);
+}
+
+interface SheetJSWorksheet {
+  [key: string]: unknown;
+}
+
+interface SheetJSWorkbook {
+  SheetNames: string[];
+  Sheets: Record<string, SheetJSWorksheet>;
+}
+
+interface SheetJSUtils {
+  sheet_to_csv(worksheet: SheetJSWorksheet): string;
+}
+
+interface SheetJSLibrary {
+  read(data: ArrayBuffer, options: { type: string }): SheetJSWorkbook;
+  utils: SheetJSUtils;
+}
+
+function loadSheetJS(): Promise<SheetJSLibrary> {
+  return new Promise((resolve, reject) => {
+    const w = window as unknown as { XLSX?: SheetJSLibrary };
+    if (w.XLSX) {
+      resolve(w.XLSX);
+      return;
+    }
+    const script = document.createElement("script");
+    script.src = "https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js";
+    script.onload = () => {
+      const loadedW = window as unknown as { XLSX?: SheetJSLibrary };
+      if (loadedW.XLSX) {
+        resolve(loadedW.XLSX);
+      } else {
+        reject(new Error("SheetJS was not found on window object."));
+      }
+    };
+    script.onerror = () => {
+      reject(new Error("Failed to load spreadsheet parser library from CDN."));
+    };
+    document.head.appendChild(script);
+  });
 }
 
 async function readFileAsText(file: File): Promise<string> {
@@ -55,11 +98,11 @@ export function CsvUpload({ onUpload, loading, initialFileName }: CsvUploadProps
       setError(null);
 
       if (!isAcceptedFile(file)) {
-        setError("Please upload a .csv or .txt holdings file");
+        setError("Please upload a CSV, TXT, Excel (.xlsx, .xls) holdings file");
         return;
       }
-      if (file.size > 4 * 1024 * 1024) {
-        setError("File size must be under 4MB");
+      if (file.size > 8 * 1024 * 1024) {
+        setError("File size must be under 8MB");
         return;
       }
       if (file.size === 0) {
@@ -67,10 +110,39 @@ export function CsvUpload({ onUpload, loading, initialFileName }: CsvUploadProps
         return;
       }
 
+      const ext = file.name.toLowerCase().slice(file.name.lastIndexOf("."));
+      if (ext === ".xlsx" || ext === ".xls") {
+        try {
+          // Trigger parsing state
+          onUpload("", file.name); 
+          const XLSX = await loadSheetJS();
+          const buffer = await file.arrayBuffer();
+          const workbook = XLSX.read(buffer, { type: "array" });
+          const sheetName = workbook.SheetNames[0];
+          if (!sheetName) {
+            setError("The Excel spreadsheet is empty.");
+            return;
+          }
+          const sheet = workbook.Sheets[sheetName];
+          const csvContent = XLSX.utils.sheet_to_csv(sheet);
+
+          if (!csvContent || !csvContent.trim()) {
+            setError("No content found in the Excel spreadsheet.");
+            return;
+          }
+          setFileName(file.name);
+          onUpload(csvContent, file.name);
+        } catch (err: unknown) {
+          const msg = err instanceof Error ? err.message : "Failed to process the Excel spreadsheet.";
+          setError(msg);
+        }
+        return;
+      }
+
       try {
         const content = await readFileAsText(file);
         if (!content || !content.trim()) {
-          setError("Could not read file content. Try exporting as CSV (UTF-8) from your broker.");
+          setError("Could not read file content. Try exporting as CSV from your broker.");
           return;
         }
         setFileName(file.name);
@@ -108,7 +180,7 @@ export function CsvUpload({ onUpload, loading, initialFileName }: CsvUploadProps
       >
         <input
           type="file"
-          accept=".csv,.txt,text/csv,text/plain"
+          accept=".csv,.txt,.xlsx,.xls,text/csv,text/plain,application/vnd.ms-excel,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
           className="absolute inset-0 cursor-pointer opacity-0"
           onChange={(e) => {
             const file = e.target.files?.[0];
@@ -130,7 +202,7 @@ export function CsvUpload({ onUpload, loading, initialFileName }: CsvUploadProps
           {fileName ? fileName : "Import holdings statement"}
         </p>
         <p className="mt-1 text-xs text-market-muted">
-          Drop CSV from CDSL · NSDL · Zerodha · Groww · any broker
+          Drop CSV or Excel from CDSL · NSDL · Zerodha · Groww · any broker
         </p>
 
         {loading && (
