@@ -21,7 +21,6 @@ export function Navbar({ user }: NavbarProps) {
       { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
       { href: "/markets", label: "Markets", icon: LineChart },
       { href: "/portfolio", label: "Holdings", icon: PieChart },
-      { href: "/analyze", label: "Analyze", icon: Upload },
       { href: "/support", label: "Support", icon: HelpCircle },
     ]
     : [
