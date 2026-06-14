@@ -201,7 +201,7 @@ export interface FullAnalysis extends BasicAnalysis {
 }
 
 const SECTOR_COLORS: Record<string, string> = {
-  Banking: "#00D09C",
+  "Banking & Finance": "#10b981",
   IT: "#5367FF",
   Energy: "#FF6B35",
   FMCG: "#FFB800",
@@ -209,7 +209,11 @@ const SECTOR_COLORS: Record<string, string> = {
   Auto: "#00B8D4",
   Telecom: "#7C4DFF",
   Infrastructure: "#FF5252",
+  Materials: "#8D6E63",
+  "Consumer Services": "#FF4081",
+  "Aerospace & Defence": "#607D8B",
   Unknown: "#9E9E9E",
+  Others: "#9E9E9E",
 };
 
 function resolveCurrentPrice(

@@ -407,8 +407,15 @@ export function parseHoldingsCSV(rawContent: string): ParseResult {
 
   const source = detectSource(headers);
 
-  const symbolCol = findColumn(headers, SYMBOL_KEYS);
-  const nameCol = findColumn(headers, NAME_KEYS);
+  const symbolCol = findColumn(headers, SYMBOL_KEYS, {
+    skipHeader: (header) => {
+      const norm = normalizeKey(header);
+      return norm.includes("name") || norm.includes("company") || norm.includes("description") || norm.includes("security");
+    }
+  });
+  const nameCol = findColumn(headers, NAME_KEYS, {
+    exclude: symbolCol ? [symbolCol] : [],
+  });
   const isinCol = findColumn(headers, ISIN_KEYS);
   const qtyCol = findColumn(headers, QTY_KEYS);
   const avgPriceCol = findColumn(headers, AVG_PRICE_KEYS, {

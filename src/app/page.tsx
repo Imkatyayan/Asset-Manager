@@ -141,9 +141,11 @@ export default async function HomePage() {
               )}
             </div>
 
-            <p className="mt-4 text-xs text-market-muted animate-fade-in-up stagger-5">
-              Sign up for momentum, fundamentals & smart suggestions.
-            </p>
+            {!session && (
+              <p className="mt-4 text-xs text-market-muted animate-fade-in-up stagger-5">
+                Sign up for momentum, fundamentals & smart suggestions.
+              </p>
+            )}
           </div>
 
           {/* Stats or User Dashboard Summary */}

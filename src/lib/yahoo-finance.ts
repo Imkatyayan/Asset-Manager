@@ -1,4 +1,5 @@
 import { deriveTrend, rsi, sma } from "./technical-indicators";
+import { guessSector, normalizeSector, resolveSector } from "./sector-utils";
 
 const USER_AGENT =
   "Mozilla/5.0 (compatible; PortfolioIQ/1.0; +https://github.com/portfolioiq)";
@@ -243,14 +244,18 @@ export async function searchSymbols(query: string, limit = 12): Promise<SearchRe
   const results = (json.quotes ?? [])
     .filter((q) => isIndianSymbol(q.symbol))
     .slice(0, limit)
-    .map((q) => ({
-      symbol: q.symbol.replace(/\.(NS|BO)$/i, "").replace(/^\^/, ""),
-      yahooSymbol: q.symbol,
-      name: q.longname || q.shortname || q.symbol,
-      type: q.quoteType || "EQUITY",
-      exchange: q.exchange || "NSE",
-      sector: q.sector,
-    }));
+    .map((q) => {
+      const parsedSymbol = q.symbol.replace(/\.(NS|BO)$/i, "").replace(/^\^/, "");
+      const parsedName = q.longname || q.shortname || q.symbol;
+      return {
+        symbol: parsedSymbol,
+        yahooSymbol: q.symbol,
+        name: parsedName,
+        type: q.quoteType || "EQUITY",
+        exchange: q.exchange || "NSE",
+        sector: resolveSector(parsedName, parsedSymbol, q.sector),
+      };
+    });
 
   searchCache.set(cacheKey, { data: results, fetchedAt: Date.now() });
   return results;
@@ -412,6 +417,8 @@ export async function fetchQuoteDetail(
       detail.type = searchHits[0].type;
       detail.sector = searchHits[0].sector;
       if (searchHits[0].name) detail.name = searchHits[0].name;
+    } else {
+      detail.sector = normalizeSector(guessSector(detail.name, detail.symbol));
     }
 
     detailCache.set(cacheKey, { data: detail, fetchedAt: Date.now() });

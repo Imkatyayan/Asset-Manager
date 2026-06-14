@@ -98,11 +98,11 @@
     background: linear-gradient(135deg, var(--color-market-up) 0%, var(--color-market-accent) 100%);
   }
 
-  .gradient-hero {
-    /* background: var(--hero-gradient); */
+  /* .gradient-hero {
+    background: var(--hero-gradient);
     position: relative;
     overflow: hidden;
-  }
+  } */
 
   .glass-card {
     background: var(--glass-bg);
