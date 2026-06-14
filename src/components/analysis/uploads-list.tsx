@@ -30,9 +30,10 @@ interface Stats {
 interface UploadsListProps {
   portfolios: Portfolio[];
   statsById: Record<string, Stats>;
+  selectedPortfolioId?: string;
 }
 
-export function UploadsList({ portfolios, statsById }: UploadsListProps) {
+export function UploadsList({ portfolios, statsById, selectedPortfolioId }: UploadsListProps) {
   const router = useRouter();
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [isDeleting, setIsDeleting] = useState(false);
@@ -215,19 +216,28 @@ export function UploadsList({ portfolios, statsById }: UploadsListProps) {
             const stats = statsById[p.id];
             const isSelected = selectedIds.has(p.id);
             const isSingleConfirming = confirmSingleId === p.id;
+            const isActive = p.id === selectedPortfolioId;
 
             return (
               <div
                 key={p.id}
-                className={`group relative flex items-center justify-between rounded-lg border p-4 transition-all duration-200 ${
-                  isSelected
+                onClick={() => {
+                  router.push(`/dashboard?portfolioId=${p.id}`);
+                }}
+                className={`group relative flex items-center justify-between rounded-lg border p-4 transition-all duration-200 cursor-pointer ${
+                  isActive
+                    ? "border-market-up bg-emerald-950/10 hover:bg-emerald-950/15"
+                    : isSelected
                     ? "border-market-accent bg-market-accent/5"
                     : "border-market-border hover:border-market-border/80 hover:bg-market-surface/40"
                 }`}
               >
                 {/* Single Delete Confirm Overlay inline */}
                 {isSingleConfirming && (
-                  <div className="absolute inset-0 rounded-lg bg-market-card/95 flex items-center justify-between px-4 z-10 animate-fade-in border border-market-down/40">
+                  <div 
+                    onClick={(e) => e.stopPropagation()}
+                    className="absolute inset-0 rounded-lg bg-market-card/95 flex items-center justify-between px-4 z-10 animate-fade-in border border-market-down/40"
+                  >
                     <p className="text-xs text-market-text font-medium flex items-center gap-1.5">
                       <AlertTriangle className="h-3.5 w-3.5 text-market-warning" />
                       Delete &ldquo;{p.name}&rdquo;?
@@ -259,7 +269,10 @@ export function UploadsList({ portfolios, statsById }: UploadsListProps) {
                   {/* Select Checkbox */}
                   <button
                     type="button"
-                    onClick={() => toggleSelect(p.id)}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      toggleSelect(p.id);
+                    }}
                     className="text-market-muted hover:text-market-text transition-colors duration-200 focus:outline-none shrink-0"
                   >
                     {isSelected ? (
@@ -272,7 +285,12 @@ export function UploadsList({ portfolios, statsById }: UploadsListProps) {
                   <div>
                     <div className="flex items-center gap-2">
                       <p className="text-sm font-medium text-market-text">{p.name}</p>
-                      {index === 0 && (
+                      {isActive && (
+                        <span className="rounded bg-emerald-950 border border-market-up/30 px-2.5 py-0.5 text-[10px] font-medium text-market-up">
+                          Active View
+                        </span>
+                      )}
+                      {index === 0 && !isActive && (
                         <span className="rounded bg-market-accent/15 px-2 py-0.5 text-[10px] font-medium text-market-accent">
                           Latest
                         </span>
@@ -309,7 +327,10 @@ export function UploadsList({ portfolios, statsById }: UploadsListProps) {
                   {/* Individual Delete Action */}
                   <button
                     type="button"
-                    onClick={() => setConfirmSingleId(p.id)}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setConfirmSingleId(p.id);
+                    }}
                     disabled={isDeleting}
                     className="opacity-0 group-hover:opacity-100 hover:text-market-down text-market-muted/60 p-1.5 rounded-md hover:bg-market-down/10 transition-all duration-200 shrink-0"
                     title="Delete portfolio"

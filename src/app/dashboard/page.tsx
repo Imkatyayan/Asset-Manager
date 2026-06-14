@@ -15,7 +15,12 @@ import { SuggestionsPanel } from "@/components/analysis/suggestions-panel";
 import { UploadsList } from "@/components/analysis/uploads-list";
 import { formatCurrency } from "@/lib/utils";
 
-export default async function DashboardPage() {
+export default async function DashboardPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ portfolioId?: string }>;
+}) {
+  const { portfolioId } = await searchParams;
   const session = await getSession();
   if (!session) redirect("/login");
 
@@ -26,6 +31,9 @@ export default async function DashboardPage() {
   });
 
   const latestPortfolio = portfolios[0];
+  const activePortfolio = portfolioId
+    ? portfolios.find((p) => p.id === portfolioId) || latestPortfolio
+    : latestPortfolio;
 
   // Compute per-portfolio summary stats from DB values.
   const portfolioStats = portfolios.map((p) => {
@@ -53,11 +61,11 @@ export default async function DashboardPage() {
     })),
   }));
 
-  // Run full analysis on the latest portfolio, passing DB-stored currentPrice
+  // Run full analysis on the active portfolio, passing DB-stored currentPrice
   // as csvLtp so resolveCurrentPrice uses it directly (same priority as /analyze).
   let analysis: FullAnalysis | null = null;
-  if (latestPortfolio?.holdings.length) {
-    const parsedHoldings = latestPortfolio.holdings.map((h) => ({
+  if (activePortfolio?.holdings.length) {
+    const parsedHoldings = activePortfolio.holdings.map((h) => ({
       symbol: h.symbol,
       name: h.name,
       quantity: h.quantity,
@@ -143,18 +151,28 @@ export default async function DashboardPage() {
           </div>
 
           {/* Uploads list */}
-          <UploadsList portfolios={serializablePortfolios} statsById={statsById} />
+          <UploadsList
+            portfolios={serializablePortfolios}
+            statsById={statsById}
+            selectedPortfolioId={activePortfolio?.id}
+          />
 
-          {/* Full analysis of latest portfolio — same components as /analyze */}
+          {/* Full analysis of active portfolio — same components as /analyze */}
           {analysis && (
             <>
               <div className="flex items-center gap-2">
                 <h2 className="text-base font-semibold">
-                  Analysis · {latestPortfolio.name}
+                  Analysis · {activePortfolio.name}
                 </h2>
-                <span className="rounded bg-primary-light px-2 py-0.5 text-[10px] font-medium text-primary">
-                  Latest
-                </span>
+                {activePortfolio.id === latestPortfolio.id ? (
+                  <span className="rounded bg-emerald-950/40 border border-market-up/30 px-2 py-0.5 text-[10px] font-medium text-market-up">
+                    Latest
+                  </span>
+                ) : (
+                  <span className="rounded bg-market-surface border border-market-border/40 px-2 py-0.5 text-[10px] font-medium text-market-muted">
+                    Active View
+                  </span>
+                )}
               </div>
 
               <PortfolioSummary analysis={analysis} />
