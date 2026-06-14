@@ -73,8 +73,8 @@ export function getStockRecommendation(h: EnrichedHolding): StockRecommendation 
       if (rsi > 70 || (ret > 25 && f.pe > 45)) {
         return {
           action: "BOOK PROFITS",
-          actionColor: "text-amber-400 border-amber-900/30",
-          badgeStyle: "bg-amber-950/20 text-amber-400 border-amber-900/40",
+          actionColor: "text-violet-400 border-violet-900/30",
+          badgeStyle: "bg-violet-950/20 text-violet-400 border-violet-900/40",
           technicalTip: `Overbought momentum (RSI: ${rsi}). Price is trading near immediate resistance of ${formatCurrency(resistance)}.`,
           fundamentalTip: f.pe > 0
             ? `High valuation of P/E ${f.pe.toFixed(1)} suggests current growth assumptions are fully priced in.`
@@ -113,8 +113,8 @@ export function getStockRecommendation(h: EnrichedHolding): StockRecommendation 
       if (rsi > 70) {
         return {
           action: "HOLD",
-          actionColor: "text-amber-400 border-amber-900/30",
-          badgeStyle: "bg-amber-950/10 text-amber-400 border-amber-900/30",
+          actionColor: "text-yellow-400 border-yellow-900/30",
+          badgeStyle: "bg-yellow-950/10 text-yellow-400 border-yellow-900/30",
           technicalTip: `Stock has seen a short-term rally (RSI: ${rsi} is overbought) but you are sitting at a loss of ${Math.abs(ret).toFixed(1)}%.`,
           fundamentalTip: `Company has moderate fundamentals (ROE: ${f.roe}%, P/E: ${f.pe.toFixed(1)}).`,
           verdict: `Hold ${h.symbol} and avoid buying more at this short-term peak. The stock is overbought on charts, so wait for a price pullback or fundamental trend reversal before decision-making.`
@@ -148,8 +148,8 @@ export function getStockRecommendation(h: EnrichedHolding): StockRecommendation 
     if (ret > 30) {
       return {
         action: "BOOK PROFITS",
-        actionColor: "text-amber-400 border-amber-900/30",
-        badgeStyle: "bg-amber-950/20 text-amber-400 border-amber-900/40",
+        actionColor: "text-violet-400 border-violet-900/30",
+        badgeStyle: "bg-violet-950/20 text-violet-400 border-violet-900/40",
         technicalTip: `Strong run-up of ${ret.toFixed(1)}%. Immediate resistance is estimated at ${formatCurrency(resistance)}.`,
         fundamentalTip: `No fundamental data tracked for this custom instrument.`,
         verdict: `Lock in profits on ${h.symbol}. Having risen ${ret.toFixed(1)}% without structural data backing, it is wise to secure capital.`
@@ -160,8 +160,8 @@ export function getStockRecommendation(h: EnrichedHolding): StockRecommendation 
   // 5. Default -> HOLD
   return {
     action: "HOLD",
-    actionColor: "text-amber-400 border-amber-900/30",
-    badgeStyle: "bg-amber-950/10 text-amber-400 border-amber-900/30",
+    actionColor: "text-yellow-400 border-yellow-900/30",
+    badgeStyle: "bg-yellow-950/10 text-yellow-400 border-yellow-900/30",
     technicalTip: `Steady price action (RSI: ${rsi}). Trading comfortably between support at ${formatCurrency(support)} and resistance at ${formatCurrency(resistance)}.`,
     fundamentalTip: f 
       ? `Stable fundamentals (ROE: ${f.roe}%, profit growth: +${f.profitGrowth}%) warrant position holding.`

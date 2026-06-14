@@ -126,14 +126,14 @@ export default async function HomePage() {
               </Link>
               {!session && (
                 <Link href="/signup">
-                  <Button variant="outline" size="lg" className="w-full sm:w-auto hover:bg-market-surface transition-all duration-200">
+                  <Button variant="outline" size="lg" className="w-full sm:w-auto hover:bg-market-surface hover:border-market-accent/40 transition-all duration-200">
                     Create Free Account
                   </Button>
                 </Link>
               )}
               {session && (
                 <Link href="/dashboard">
-                  <Button variant="outline" size="lg" className="w-full sm:w-auto hover:bg-market-surface transition-all duration-200">
+                  <Button variant="outline" size="lg" className="w-full sm:w-auto hover:bg-market-surface hover:border-market-accent/40 transition-all duration-200">
                     Go to Dashboard
                     <ArrowRight className="h-4 w-4" />
                   </Button>
