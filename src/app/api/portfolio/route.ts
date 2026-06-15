@@ -57,7 +57,7 @@ export async function POST(req: NextRequest) {
 
     // Enrich to get live prices, sector, and name for any fields the CSV omits.
     const enrichedHoldings = await enrichHoldingsBatch(
-      holdings.map((h) => ({ symbol: h.symbol, avgPrice: h.avgPrice }))
+      holdings.map((h) => ({ symbol: h.symbol, name: h.name, avgPrice: h.avgPrice }))
     );
 
     const defaultName = `Portfolio - ${new Date().toLocaleDateString("en-IN")}`;

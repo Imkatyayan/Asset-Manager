@@ -1,5 +1,13 @@
 import { guessSector, normalizeSector } from "./sector-utils";
 
+export interface PerformancePeriod {
+  period: string;
+  sales: number;
+  netProfit: number;
+  opmPercent: number;
+  eps: number;
+}
+
 export interface StockFundamentals {
   symbol: string;
   name: string;
@@ -18,6 +26,8 @@ export interface StockFundamentals {
   yearReturn: number;
   beta: number;
   capSize: "large" | "mid" | "small";
+  quarters?: PerformancePeriod[];
+  annuals?: PerformancePeriod[];
 }
 
 export const BENCHMARKS = {
@@ -1069,7 +1079,411 @@ export function enrichHolding(symbol: string, avgPrice: number): EnrichedHolding
   };
 }
 
-/** Fetch live NSE prices from Yahoo Finance, with static fundamentals as fallback. */
+export interface ScrapedFundamentals {
+  pe?: number;
+  roe?: number;
+  bookValue?: number;
+  dividendYield?: number;
+  marketCap?: number;
+  salesGrowth3Y?: number;
+  profitGrowth3Y?: number;
+  debtToEquity?: number;
+  quarters?: PerformancePeriod[];
+  annuals?: PerformancePeriod[];
+}
+
+interface ScreenerTable {
+  headers: string[];
+  rows: Record<string, string[]>;
+}
+
+function parseScreenerTable(sectionHtml: string): ScreenerTable | null {
+  const tableStart = sectionHtml.indexOf("<table");
+  const tableEnd = sectionHtml.indexOf("</table>");
+  if (tableStart === -1 || tableEnd === -1) return null;
+
+  const tableHtml = sectionHtml.substring(tableStart, tableEnd + 8);
+
+  const theadStart = tableHtml.indexOf("<thead>");
+  const theadEnd = tableHtml.indexOf("</thead>");
+  const headers: string[] = [];
+  if (theadStart !== -1 && theadEnd !== -1) {
+    const theadHtml = tableHtml.substring(theadStart, theadEnd);
+    const thRegex = /<th[^>]*>([\s\S]*?)<\/th>/g;
+    let match;
+    let index = 0;
+    while ((match = thRegex.exec(theadHtml)) !== null) {
+      const hText = match[1].replace(/<[^>]*>/g, "").replace(/&nbsp;/g, " ").replace(/[^a-zA-Z0-9% ]/g, "").replace(/\s+/g, " ").trim();
+      // Skip the first column header (it's the row labels column header, e.g. "Features" or empty or "Particulars")
+      if (index > 0) {
+        headers.push(hText);
+      }
+      index++;
+    }
+  }
+
+  const tbodyStart = tableHtml.indexOf("<tbody>");
+  const tbodyEnd = tableHtml.indexOf("</tbody>");
+  const rows: Record<string, string[]> = {};
+  if (tbodyStart !== -1 && tbodyEnd !== -1) {
+    const tbodyHtml = tableHtml.substring(tbodyStart, tbodyEnd);
+    const trRegex = /<tr[^>]*>([\s\S]*?)<\/tr>/g;
+    let trMatch;
+    while ((trMatch = trRegex.exec(tbodyHtml)) !== null) {
+      const trContent = trMatch[1];
+      const tdRegex = /<(td|th)[^>]*>([\s\S]*?)<\/\1>/g;
+      const tds: string[] = [];
+      let tdMatch;
+      while ((tdMatch = tdRegex.exec(trContent)) !== null) {
+        const tdText = tdMatch[2].replace(/<[^>]*>/g, "").replace(/&nbsp;/g, " ").trim();
+        tds.push(tdText);
+      }
+      if (tds.length > 0) {
+        const rowName = tds[0].replace(/[^a-zA-Z0-9% ]/g, "").replace(/\s+/g, " ").trim();
+        const rowValues = tds.slice(1).map(v => v.replace(/\s+/g, " ").trim());
+        rows[rowName.toLowerCase()] = rowValues;
+      }
+    }
+  }
+
+  return { headers, rows };
+}
+
+function parsePerformancePeriods(table: ScreenerTable | null): PerformancePeriod[] {
+  if (!table) return [];
+  const periods: PerformancePeriod[] = [];
+  const headers = table.headers;
+  
+  const findRow = (keys: string[]) => {
+    for (const key of keys) {
+      if (table.rows[key]) return table.rows[key];
+      const foundKey = Object.keys(table.rows).find(k => k.includes(key));
+      if (foundKey) return table.rows[foundKey];
+    }
+    return [];
+  };
+
+  const salesRow = findRow(["net sales", "sales", "revenue", "interest earned", "income"]);
+  const profitRow = findRow(["net profit", "profit after tax", "profit for the period"]);
+  const opmRow = findRow(["opm %", "financing margin %", "operating margin %", "margin"]);
+  const epsRow = findRow(["eps in rs", "eps", "adjusted eps rs", "equity dividend"]);
+  const opRow = findRow(["operating profit", "profit before tax"]);
+
+  for (let i = 0; i < headers.length; i++) {
+    const period = headers[i];
+    const sales = parseFloat((salesRow[i] || "").replace(/,/g, "")) || 0;
+    const netProfit = parseFloat((profitRow[i] || "").replace(/,/g, "")) || 0;
+    
+    let opmPercent = 0;
+    if (opmRow && opmRow[i]) {
+      opmPercent = parseFloat((opmRow[i] || "").replace(/%/g, "")) || 0;
+    } else if (sales > 0 && opRow && opRow[i]) {
+      const op = parseFloat((opRow[i] || "").replace(/,/g, "")) || 0;
+      opmPercent = Math.round((op / sales) * 10000) / 100;
+    }
+    
+    const eps = parseFloat((epsRow[i] || "")) || 0;
+
+    periods.push({
+      period,
+      sales,
+      netProfit,
+      opmPercent,
+      eps
+    });
+  }
+
+  return periods;
+}
+
+export async function fetchFinologyRatios(symbol: string): Promise<ScrapedFundamentals | null> {
+  const cleanSym = symbol.toUpperCase().replace(/\.(NS|BO|NSE|BSE)$/i, "").replace(/\s+/g, "").trim();
+  try {
+    const url = `https://ticker.finology.in/company/${encodeURIComponent(cleanSym)}`;
+    const res = await fetch(url, {
+      headers: {
+        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
+      },
+      next: { revalidate: 86400 },
+    });
+    if (!res.ok) return null;
+    const html = await res.text();
+
+    const data: ScrapedFundamentals = {};
+
+    const essentialsIdx = html.indexOf('id="companyessentials"');
+    if (essentialsIdx !== -1) {
+      const essentialsHtml = html.substring(essentialsIdx, essentialsIdx + 10000);
+      const cleanEssentials = essentialsHtml.replace(/&#8377;/g, "").replace(/&nbsp;/g, " ");
+
+      const mCapMatch = cleanEssentials.match(/Market\s+Cap[\s\S]*?class=['"]Number['"]>([\d\.,]+)/i);
+      if (mCapMatch) data.marketCap = parseFloat(mCapMatch[1].replace(/,/g, ""));
+
+      const peMatch = cleanEssentials.match(/P\/E[\s\S]*?<p>([\s\S]*?)<\/p>/i);
+      if (peMatch) {
+        const val = parseFloat(peMatch[1].replace(/<[^>]*>/g, "").trim());
+        if (!isNaN(val)) data.pe = val;
+      }
+
+      const bvMatch = cleanEssentials.match(/Book\s+Value[\s\S]*?class=['"]Number['"]>([\d\.,-]+)/i);
+      if (bvMatch) data.bookValue = parseFloat(bvMatch[1].replace(/,/g, ""));
+
+      const divMatch = cleanEssentials.match(/Div\.\s+Yield[\s\S]*?<p>([\s\S]*?)<\/p>/i);
+      if (divMatch) {
+        const val = parseFloat(divMatch[1].replace(/<[^>]*>/g, "").replace(/%/g, "").trim());
+        if (!isNaN(val)) data.dividendYield = val;
+      }
+
+      const roeMatch = cleanEssentials.match(/ROE[\s\S]*?class=['"]Number['"]>([\d\.,-]+)/i);
+      if (roeMatch) data.roe = parseFloat(roeMatch[1].replace(/,/g, ""));
+
+      const salesMatch = cleanEssentials.match(/Sales\s+Growth[\s\S]*?class=['"]Number['"]>([\d\.,-]+)/i);
+      if (salesMatch) data.salesGrowth3Y = parseFloat(salesMatch[1].replace(/,/g, ""));
+
+      const profitMatch = cleanEssentials.match(/Profit\s+Growth[\s\S]*?class=['"]Number['"]>([\d\.,-]+)/i);
+      if (profitMatch) data.profitGrowth3Y = parseFloat(profitMatch[1].replace(/,/g, ""));
+    }
+
+    const deMatch = html.match(/id="mainContent_lblDebtEquity">Debt\/Equity[\s\S]*?class=['"]Number['"]>([\d\.,-]+)/i);
+    if (deMatch) {
+      data.debtToEquity = parseFloat(deMatch[1].replace(/,/g, ""));
+    } else {
+      data.debtToEquity = 0;
+    }
+
+    const quartersIdx = html.indexOf('id="mainContent_quarterly"');
+    if (quartersIdx !== -1) {
+      const table = parseScreenerTable(html.substring(quartersIdx, quartersIdx + 35000));
+      data.quarters = parsePerformancePeriods(table);
+    }
+
+    const plIdx = html.indexOf('Profit & Loss');
+    if (plIdx !== -1) {
+      const table = parseScreenerTable(html.substring(plIdx, plIdx + 35000));
+      data.annuals = parsePerformancePeriods(table);
+    }
+
+    return data;
+  } catch (err) {
+    console.error("Finology scraping failed for symbol:", symbol, err);
+    return null;
+  }
+}
+
+const getFs = () => {
+  if (typeof window === "undefined") {
+    try {
+      return require("fs");
+    } catch {
+      return null;
+    }
+  }
+  return null;
+};
+
+const getPath = () => {
+  if (typeof window === "undefined") {
+    try {
+      return require("path");
+    } catch {
+      return null;
+    }
+  }
+  return null;
+};
+
+const CACHE_FILE_NAME = ".screener_cache.json";
+
+function getCacheFilePath(): string | null {
+  const fs = getFs();
+  const path = getPath();
+  if (!fs || !path) return null;
+  return path.join(process.cwd(), CACHE_FILE_NAME);
+}
+
+function loadCacheFromDisk(): Map<string, { data: ScrapedFundamentals | null; fetchedAt: number }> {
+  const cache = new Map<string, { data: ScrapedFundamentals | null; fetchedAt: number }>();
+  const fs = getFs();
+  const filePath = getCacheFilePath();
+  if (!fs || !filePath) return cache;
+
+  try {
+    if (fs.existsSync(filePath)) {
+      const raw = fs.readFileSync(filePath, "utf-8");
+      const parsed = JSON.parse(raw);
+      for (const [key, value] of Object.entries(parsed)) {
+        cache.set(key, value as any);
+      }
+      console.log(`[Cache] Loaded ${cache.size} entries from ${CACHE_FILE_NAME}`);
+    }
+  } catch (err) {
+    console.error(`[Cache] Failed to load cache from disk:`, err);
+  }
+  return cache;
+}
+
+function saveCacheToDisk(cache: Map<string, { data: ScrapedFundamentals | null; fetchedAt: number }>) {
+  const fs = getFs();
+  const filePath = getCacheFilePath();
+  if (!fs || !filePath) return;
+
+  try {
+    const obj: Record<string, { data: ScrapedFundamentals | null; fetchedAt: number }> = {};
+    for (const [key, value] of cache.entries()) {
+      obj[key] = value;
+    }
+    fs.writeFileSync(filePath, JSON.stringify(obj, null, 2), "utf-8");
+  } catch (err) {
+    console.error(`[Cache] Failed to save cache to disk:`, err);
+  }
+}
+
+const screenerCache = loadCacheFromDisk();
+const SCREENER_CACHE_TTL_MS = 12 * 60 * 60 * 1000; // 12 hours cache
+
+export async function fetchScreenerRatios(symbol: string): Promise<ScrapedFundamentals | null> {
+  const cleanSym = symbol.toUpperCase().replace(/\.(NS|BO|NSE|BSE)$/i, "").replace(/\s+/g, "").trim();
+  const cached = screenerCache.get(cleanSym);
+  if (cached && Date.now() - cached.fetchedAt < SCREENER_CACHE_TTL_MS) {
+    return cached.data;
+  }
+
+  try {
+    const url = `https://www.screener.in/company/${encodeURIComponent(cleanSym)}/`;
+    const res = await fetch(url, {
+      headers: {
+        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
+      },
+      next: { revalidate: 86400 },
+    });
+    if (!res.ok) {
+      if (res.status === 404) {
+        screenerCache.set(cleanSym, { data: null, fetchedAt: Date.now() });
+        saveCacheToDisk(screenerCache);
+        return null;
+      }
+      const fallback = await fetchFinologyRatios(symbol);
+      screenerCache.set(cleanSym, { data: fallback, fetchedAt: Date.now() });
+      saveCacheToDisk(screenerCache);
+      return fallback;
+    }
+    const html = await res.text();
+
+    const data: ScrapedFundamentals = {};
+
+    // 1. Extract from #top-ratios list
+    const liRegex = /<li[^>]*>[\s\S]*?<span class="name">([\s\S]*?)<\/span>[\s\S]*?<span class="number">([\s\S]*?)<\/span>[\s\S]*?<\/li>/g;
+    let match;
+    while ((match = liRegex.exec(html)) !== null) {
+      const name = match[1].trim().toLowerCase();
+      const valueStr = match[2].replace(/,/g, "").trim();
+      const val = parseFloat(valueStr);
+      if (isNaN(val)) continue;
+
+      if (name.includes("stock p/e")) {
+        data.pe = val;
+      } else if (name.includes("roe")) {
+        data.roe = val;
+      } else if (name.includes("book value")) {
+        data.bookValue = val;
+      } else if (name.includes("dividend yield")) {
+        data.dividendYield = val;
+      } else if (name.includes("market cap")) {
+        data.marketCap = val;
+      }
+    }
+
+    // 2. Extract Compounded Sales Growth
+    const salesRegex = /Compounded Sales Growth[\s\S]*?<td>3 Years:<\/td>[\s\S]*?<td>(-?\d+)%<\/td>/i;
+    const salesMatch = html.match(salesRegex);
+    if (salesMatch) {
+      data.salesGrowth3Y = parseFloat(salesMatch[1]);
+    }
+
+    // 3. Extract Compounded Profit Growth
+    const profitRegex = /Compounded Profit Growth[\s\S]*?<td>3 Years:<\/td>[\s\S]*?<td>(-?\d+)%<\/td>/i;
+    const profitMatch = html.match(profitRegex);
+    if (profitMatch) {
+      data.profitGrowth3Y = parseFloat(profitMatch[1]);
+    }
+
+    // 4. Calculate Debt to Equity from Balance Sheet
+    const reservesRegex = /Reserves[\s\S]*?<\/td>([\s\S]*?)<\/tr>/i;
+    const reservesMatch = html.match(reservesRegex);
+    let reserves = 0;
+    if (reservesMatch) {
+      const tdRegex = /<td[^>]*>([\s\S]*?)<\/td>/g;
+      const tds = [];
+      let tdMatch;
+      while ((tdMatch = tdRegex.exec(reservesMatch[1])) !== null) {
+        tds.push(tdMatch[1].replace(/,/g, "").trim());
+      }
+      const val = parseFloat(tds[tds.length - 1]);
+      if (!isNaN(val)) reserves = val;
+    }
+
+    const shareCapitalRegex = /Share Capital[\s\S]*?<\/td>([\s\S]*?)<\/tr>/i;
+    const shareCapitalMatch = html.match(shareCapitalRegex);
+    let shareCapital = 0;
+    if (shareCapitalMatch) {
+      const tdRegex = /<td[^>]*>([\s\S]*?)<\/td>/g;
+      const tds = [];
+      let tdMatch;
+      while ((tdMatch = tdRegex.exec(shareCapitalMatch[1])) !== null) {
+        tds.push(tdMatch[1].replace(/,/g, "").trim());
+      }
+      const val = parseFloat(tds[tds.length - 1]);
+      if (!isNaN(val)) shareCapital = val;
+    }
+
+    const borrowingsRegex = /Borrowings[\s\S]*?<\/td>([\s\S]*?)<\/tr>/i;
+    const borrowingsMatch = html.match(borrowingsRegex);
+    let borrowings = 0;
+    if (borrowingsMatch) {
+      const tdRegex = /<td[^>]*>([\s\S]*?)<\/td>/g;
+      const tds = [];
+      let tdMatch;
+      while ((tdMatch = tdRegex.exec(borrowingsMatch[1])) !== null) {
+        tds.push(tdMatch[1].replace(/,/g, "").trim());
+      }
+      const val = parseFloat(tds[tds.length - 1]);
+      if (!isNaN(val)) borrowings = val;
+    }
+
+    const equity = shareCapital + reserves;
+    if (equity > 0) {
+      data.debtToEquity = Math.round((borrowings / equity) * 100) / 100;
+    } else {
+      data.debtToEquity = 0;
+    }
+
+    // 5. Parse Quarters and Annual tables
+    const quartersIdx = html.indexOf('id="quarters"');
+    if (quartersIdx !== -1) {
+      const table = parseScreenerTable(html.substring(quartersIdx, quartersIdx + 35000));
+      data.quarters = parsePerformancePeriods(table);
+    }
+
+    const plIdx = html.indexOf('id="profit-loss"');
+    if (plIdx !== -1) {
+      const table = parseScreenerTable(html.substring(plIdx, plIdx + 35000));
+      data.annuals = parsePerformancePeriods(table);
+    }
+
+    screenerCache.set(cleanSym, { data, fetchedAt: Date.now() });
+    saveCacheToDisk(screenerCache);
+    return data;
+  } catch (err) {
+    const errMsg = err instanceof Error ? err.message : String(err);
+    console.warn(`Screener scraping failed for symbol "${symbol}", attempting Finology fallback:`, errMsg);
+    const fallback = await fetchFinologyRatios(symbol);
+    screenerCache.set(cleanSym, { data: fallback, fetchedAt: Date.now() });
+    saveCacheToDisk(screenerCache);
+    return fallback;
+  }
+}
+
+/** Fetch live NSE prices from Yahoo Finance, with dynamic fundamentals from Screener.in or static database. */
 export async function enrichHoldingAsync(
   symbol: string,
   avgPrice: number,
@@ -1092,11 +1506,12 @@ export async function enrichHoldingAsync(
 
   if (!staticStock && !resolvedInfo) {
     try {
-      const searchHits = await searchSymbols(normalized, 1);
-      if (searchHits[0]) {
-        resolvedSymbol = searchHits[0].symbol;
-        resolvedYahooSymbol = searchHits[0].yahooSymbol;
-        resolvedName = searchHits[0].name;
+      const searchHits = await searchSymbols(normalized, 5);
+      if (searchHits && searchHits.length > 0) {
+        const bestHit = searchHits.find(hit => hit.symbol.toUpperCase() === normalized.toUpperCase()) || searchHits[0];
+        resolvedSymbol = bestHit.symbol;
+        resolvedYahooSymbol = bestHit.yahooSymbol;
+        resolvedName = bestHit.name;
         staticStock = getStockData(resolvedSymbol);
       }
     } catch (err) {
@@ -1124,6 +1539,41 @@ export async function enrichHoldingAsync(
   }
 
   if (staticStock) {
+    let scraped: ScrapedFundamentals | null = null;
+    try {
+      scraped = await fetchScreenerRatios(resolvedSymbol);
+    } catch (err) {
+      console.error("Failed to fetch dynamic screener data for symbol:", resolvedSymbol, err);
+    }
+
+    if (scraped && Object.keys(scraped).length > 0) {
+      const momentum = yearReturn != null ? deriveMomentum(yearReturn) : { momentumScore: staticStock.momentumScore || 50, trend: staticStock.trend || ("neutral" as const) };
+      const fundamentals: StockFundamentals = {
+        ...staticStock,
+        currentPrice: quote.price,
+        pe: scraped.pe || staticStock.pe,
+        pb: scraped.bookValue && scraped.bookValue > 0 ? Math.round((quote.price / scraped.bookValue) * 100) / 100 : staticStock.pb,
+        roe: scraped.roe || staticStock.roe,
+        debtToEquity: scraped.debtToEquity !== undefined ? scraped.debtToEquity : staticStock.debtToEquity,
+        revenueGrowth: scraped.salesGrowth3Y || staticStock.revenueGrowth,
+        profitGrowth: scraped.profitGrowth3Y || staticStock.profitGrowth,
+        dividendYield: scraped.dividendYield !== undefined ? scraped.dividendYield : staticStock.dividendYield,
+        marketCap: scraped.marketCap || staticStock.marketCap,
+        yearReturn: yearReturn ?? staticStock.yearReturn,
+        capSize: scraped.marketCap ? (scraped.marketCap > 100000 ? "large" : scraped.marketCap > 20000 ? "mid" : "small") : staticStock.capSize,
+        quarters: scraped.quarters || [],
+        annuals: scraped.annuals || [],
+        ...momentum,
+      };
+      return {
+        symbol: staticStock.symbol,
+        name: staticStock.name,
+        sector: staticStock.sector,
+        currentPrice: quote.price,
+        fundamentals,
+      };
+    }
+
     const fundamentals = mergeWithLiveQuote(staticStock, quote.price, yearReturn);
     return {
       symbol: staticStock.symbol,
@@ -1137,23 +1587,42 @@ export async function enrichHoldingAsync(
   const name = quote.name || resolvedName;
   const sector = normalizeSector(resolvedInfo?.resolvedSector || guessSector(name, resolvedSymbol));
 
+  let scraped: ScrapedFundamentals | null = null;
+  try {
+    scraped = await fetchScreenerRatios(resolvedSymbol);
+  } catch (err) {
+    console.error("Failed to fetch dynamic screener data for symbol:", resolvedSymbol, err);
+  }
+
+  if (!scraped || Object.keys(scraped).length === 0) {
+    return {
+      symbol: resolvedSymbol,
+      name: name,
+      sector: sector,
+      currentPrice: quote.price,
+      fundamentals: null,
+    };
+  }
+
   const momentum = yearReturn != null ? deriveMomentum(yearReturn) : { momentumScore: 50, trend: "neutral" as const };
   const fundamentals: StockFundamentals = {
     symbol: resolvedSymbol,
     name: name,
     sector: sector,
     currentPrice: quote.price,
-    pe: 0,
-    pb: 0,
-    roe: 0,
-    debtToEquity: 0,
-    revenueGrowth: 0,
-    profitGrowth: 0,
-    dividendYield: 0,
-    marketCap: 0,
+    pe: scraped.pe || 0,
+    pb: scraped.bookValue && scraped.bookValue > 0 ? Math.round((quote.price / scraped.bookValue) * 100) / 100 : 0,
+    roe: scraped.roe || 0,
+    debtToEquity: scraped.debtToEquity || 0,
+    revenueGrowth: scraped.salesGrowth3Y || 0,
+    profitGrowth: scraped.profitGrowth3Y || 0,
+    dividendYield: scraped.dividendYield || 0,
+    marketCap: scraped.marketCap || 0,
     yearReturn: yearReturn ?? 0,
     beta: 1.0,
-    capSize: "mid",
+    capSize: scraped.marketCap ? (scraped.marketCap > 100000 ? "large" : scraped.marketCap > 20000 ? "mid" : "small") : "mid",
+    quarters: scraped.quarters || [],
+    annuals: scraped.annuals || [],
     ...momentum,
   };
 
@@ -1166,8 +1635,79 @@ export async function enrichHoldingAsync(
   };
 }
 
+export function cleanSymbolForSearch(symbol: string): string {
+  let clean = symbol.toUpperCase().trim();
+  
+  // Strip parenthesized terms
+  clean = clean.replace(/\((I|INDIA|IND|NSE|BSE)\)/g, " ");
+  clean = clean.replace(/\(([^)]+)\)/g, " $1 "); 
+
+  // Strip common suffixes from the end of the string
+  const suffixes = [
+    "SYSTEMSLTD", "MOBLTD", "CO.LTD", "COLTD", "LTD", "LIMITED", "CORP", "CORPORATION", 
+    "SYSTEMS", "RAIL", "ENERGY", "ENTERPRISES", "CO", "COMMUNICATIONS", "INDUSTRIES", 
+    "FINANCE", "FINCORP", "DEVELOPMENT", "RENEWABLE", "INFRASTRUCTURE", "JEWELLERS", 
+    "BEVERAGES", "ELECTRONICS", "SHIPBUILDERS", "HOLDINGS", "INVESTMENTS", "SERVICES", 
+    "PEOPLE", "PORTS", "POWER", "STEEL", "CEMENT", "PHARMA", "CHEMICALS", "AUTOMOTIVE", 
+    "MOTORS", "AVIATION", "PETROLEUM", "INSURANCE", "BANK", "ASSET"
+  ];
+  
+  let changed = true;
+  while (changed) {
+    changed = false;
+    for (const suffix of suffixes) {
+      if (clean.endsWith(suffix)) {
+        clean = clean.slice(0, -suffix.length).trim();
+        changed = true;
+        break;
+      }
+    }
+  }
+
+  // Split common merged keywords
+  const wordReplacements = [
+    { pattern: /COALINDIA/g, replacement: "COAL INDIA" },
+    { pattern: /ANGELONE/g, replacement: "ANGEL ONE" },
+    { pattern: /DIXONTECH/g, replacement: "DIXON TECH" },
+    { pattern: /COCHINSHIP/g, replacement: "COCHIN SHIPYARD" },
+    { pattern: /VARUNBEV/g, replacement: "VARUN BEVERAGES" },
+    { pattern: /KPITTECH/g, replacement: "KPIT TECH" },
+    { pattern: /LEMONTREE/g, replacement: "LEMON TREE" },
+    { pattern: /TITAGARH/g, replacement: "TITAGARH" },
+    { pattern: /WAAREE/g, replacement: "WAAREE" },
+    { pattern: /AMARARAJA/g, replacement: "AMARA RAJA" },
+    { pattern: /JIOFIN/g, replacement: "JIO FINANCIAL" },
+    { pattern: /KALYANKJIL/g, replacement: "KALYAN JEWELLERS" },
+    { pattern: /TATAPOWER/g, replacement: "TATA POWER" },
+    { pattern: /TATASTEEL/g, replacement: "TATA STEEL" },
+    { pattern: /TATAMOTORS/g, replacement: "TATA MOTORS" },
+    { pattern: /TATACONSUM/g, replacement: "TATA CONSUMER" },
+    { pattern: /TATAELXSI/g, replacement: "TATA ELXSI" },
+    { pattern: /HDFCBANK/g, replacement: "HDFC BANK" },
+    { pattern: /ICICIBANK/g, replacement: "ICICI BANK" },
+    { pattern: /INDUSINDBK/g, replacement: "INDUSIND BANK" },
+    { pattern: /YESBANK/g, replacement: "YES BANK" },
+    { pattern: /SBIN/g, replacement: "STATE BANK OF INDIA" },
+    { pattern: /ONGC/g, replacement: "ONGC" },
+    { pattern: /RVNL/g, replacement: "RAIL VIKAS INTEGRATED" },
+    { pattern: /IRFC/g, replacement: "IRFC" },
+    { pattern: /IRCTC/g, replacement: "IRCTC" },
+    { pattern: /IREDA/g, replacement: "IREDA" },
+    { pattern: /NHPC/g, replacement: "NHPC" },
+    { pattern: /HUDCO/g, replacement: "HUDCO" },
+    { pattern: /PFC/g, replacement: "POWER FINANCE" },
+    { pattern: /RECLTD/g, replacement: "REC" },
+  ];
+
+  for (const { pattern, replacement } of wordReplacements) {
+    clean = clean.replace(pattern, replacement);
+  }
+  
+  return clean.replace(/\s+/g, " ").trim();
+}
+
 export async function enrichHoldingsBatch(
-  holdings: Array<{ symbol: string; avgPrice: number }>
+  holdings: Array<{ symbol: string; name?: string; avgPrice: number }>
 ): Promise<EnrichedHoldingData[]> {
   const { toYahooSymbol, fetchQuotes, searchSymbols } = await import("./yahoo-finance");
 
@@ -1180,7 +1720,7 @@ export async function enrichHoldingsBatch(
     avgPrice: number;
   }
 
-  // First, resolve all non-standard symbols or ISINs dynamically
+  // First, resolve all non-standard symbols or ISINs dynamically using a fallback search chain
   const resolvedHoldings: ResolvedHoldingInfo[] = await Promise.all(
     holdings.map(async (h) => {
       const normalized = h.symbol.toUpperCase().replace(/\.(NS|BO|NSE|BSE)$/i, "");
@@ -1196,21 +1736,37 @@ export async function enrichHoldingsBatch(
         };
       }
 
-      // Try dynamic search via Yahoo API
-      try {
-        const searchHits = await searchSymbols(normalized, 1);
-        if (searchHits[0]) {
-          return {
-            originalSymbol: h.symbol,
-            resolvedSymbol: searchHits[0].symbol,
-            resolvedName: searchHits[0].name,
-            resolvedYahooSymbol: searchHits[0].yahooSymbol,
-            resolvedSector: normalizeSector(searchHits[0].sector || ""),
-            avgPrice: h.avgPrice,
-          };
+      // Dynamic lookup fallback chain:
+      // 1. Raw normalized symbol
+      // 2. Stated company name from CSV (if available and different)
+      // 3. Cleaned symbol to remove broker decorations and space-separate keywords
+      const searchTerms: string[] = [];
+      searchTerms.push(normalized);
+      if (h.name && h.name.toUpperCase().trim() !== normalized) {
+        searchTerms.push(h.name);
+      }
+      const cleaned = cleanSymbolForSearch(normalized);
+      if (cleaned && cleaned !== normalized) {
+        searchTerms.push(cleaned);
+      }
+
+      for (const term of searchTerms) {
+        try {
+          const searchHits = await searchSymbols(term, 5);
+          if (searchHits && searchHits.length > 0) {
+            const bestHit = searchHits.find(hit => hit.symbol.toUpperCase() === term.toUpperCase()) || searchHits[0];
+            return {
+              originalSymbol: h.symbol,
+              resolvedSymbol: bestHit.symbol,
+              resolvedName: bestHit.name,
+              resolvedYahooSymbol: bestHit.yahooSymbol,
+              resolvedSector: normalizeSector(bestHit.sector || ""),
+              avgPrice: h.avgPrice,
+            };
+          }
+        } catch (err) {
+          console.error(`Dynamic symbol search failed for term "${term}" in batch:`, err);
         }
-      } catch (err) {
-        console.error("Dynamic symbol search failed for query in batch:", normalized, err);
       }
 
       return {

@@ -4,16 +4,11 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { Save } from "lucide-react";
 import { CsvUpload } from "@/components/analysis/csv-upload";
-import { PortfolioSummary } from "@/components/analysis/portfolio-summary";
-import { AllocationChart } from "@/components/analysis/allocation-chart";
-import { BenchmarkComparison } from "@/components/analysis/benchmark-comparison";
-import { HoldingsTable } from "@/components/analysis/holdings-table";
-import { FullAnalysisView } from "@/components/analysis/full-analysis";
-import { SuggestionsPanel } from "@/components/analysis/suggestions-panel";
+import { PortfolioDashboardView } from "@/components/analysis/portfolio-dashboard-view";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent } from "@/components/ui/card";
-import type { FullAnalysis } from "@/lib/analysis";
+import type { BasicAnalysis, FullAnalysis } from "@/lib/analysis";
 
 export default function PortfolioPage() {
   const router = useRouter();
@@ -21,7 +16,8 @@ export default function PortfolioPage() {
   const [saving, setSaving] = useState(false);
   const [csvContent, setCsvContent] = useState<string | null>(null);
   const [portfolioName, setPortfolioName] = useState("");
-  const [analysis, setAnalysis] = useState<FullAnalysis | null>(null);
+  const [analysis, setAnalysis] = useState<BasicAnalysis | FullAnalysis | null>(null);
+  const [tier, setTier] = useState<"basic" | "full">("basic");
   const [error, setError] = useState<string | null>(null);
   const [saved, setSaved] = useState(false);
 
@@ -46,6 +42,7 @@ export default function PortfolioPage() {
       }
 
       setAnalysis(data.analysis);
+      setTier(data.tier);
     } catch {
       setError("Failed to analyze portfolio.");
     } finally {
@@ -80,6 +77,7 @@ export default function PortfolioPage() {
 
       setSaved(true);
       setAnalysis(data.analysis);
+      setTier(data.tier || "full");
     } catch {
       setError("Failed to save portfolio.");
     } finally {
@@ -124,18 +122,7 @@ export default function PortfolioPage() {
             </CardContent>
           </Card>
 
-          <PortfolioSummary analysis={analysis} />
-
-          <div className="grid gap-6 lg:grid-cols-2">
-            <AllocationChart data={analysis.sectorAllocation} />
-            <BenchmarkComparison data={analysis.benchmarkComparison} />
-          </div>
-
-          <SuggestionsPanel suggestions={analysis.suggestions} tier="full" />
-
-          <HoldingsTable holdings={analysis.holdings} showFundamentals />
-
-          <FullAnalysisView analysis={analysis} />
+          <PortfolioDashboardView analysis={analysis} tier={tier} showSipTracker={false} />
         </div>
       )}
     </div>

@@ -6,13 +6,8 @@ import { prisma } from "@/lib/prisma";
 import { analyzeFull, type FullAnalysis } from "@/lib/analysis";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { PortfolioSummary } from "@/components/analysis/portfolio-summary";
-import { AllocationChart } from "@/components/analysis/allocation-chart";
-import { BenchmarkComparison } from "@/components/analysis/benchmark-comparison";
-import { HoldingsTable } from "@/components/analysis/holdings-table";
-import { FullAnalysisView } from "@/components/analysis/full-analysis";
-import { SuggestionsPanel } from "@/components/analysis/suggestions-panel";
 import { UploadsList } from "@/components/analysis/uploads-list";
+import { PortfolioDashboardView } from "@/components/analysis/portfolio-dashboard-view";
 import { formatCurrency } from "@/lib/utils";
 
 export default async function DashboardPage({
@@ -175,18 +170,7 @@ export default async function DashboardPage({
                 )}
               </div>
 
-              <PortfolioSummary analysis={analysis} />
-
-              <div className="grid gap-5 lg:grid-cols-2">
-                <AllocationChart data={analysis.sectorAllocation} />
-                <BenchmarkComparison data={analysis.benchmarkComparison} />
-              </div>
-
-              <SuggestionsPanel suggestions={analysis.suggestions} tier="full" />
-
-              <HoldingsTable holdings={analysis.holdings} showFundamentals />
-
-              <FullAnalysisView analysis={analysis} />
+              <PortfolioDashboardView analysis={analysis} tier="full" showSipTracker={true} />
             </>
           )}
         </div>

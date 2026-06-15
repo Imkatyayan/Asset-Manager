@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, Fragment } from "react";
+import Link from "next/link";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { formatCurrency, formatPercent, formatNumber } from "@/lib/utils";
 import { EnrichedHolding, getStockRecommendation } from "@/lib/analysis";
@@ -11,8 +12,19 @@ import {
   Award, 
   ChevronRight, 
   ChevronDown, 
-  Info
+  Info,
+  Lock,
+  CalendarClock,
+  Target,
+  Pencil,
+  BarChart3,
+  TrendingUp
 } from "lucide-react";
+import {
+  computeTaxBreakdown,
+  computeBreakeven,
+  computeSectorImpliedPrice,
+} from "@/lib/tax-utils";
 
 interface HoldingsTableProps {
   holdings: EnrichedHolding[];
@@ -21,6 +33,8 @@ interface HoldingsTableProps {
 
 export function HoldingsTable({ holdings, showFundamentals }: HoldingsTableProps) {
   const [expandedSymbol, setExpandedSymbol] = useState<string | null>(null);
+  // buyDates: keyed by symbol, user-entered purchase date for tax calculation
+  const [buyDates, setBuyDates] = useState<Record<string, string>>({});
   const sorted = [...holdings].sort((a, b) => b.currentValue - a.currentValue);
 
   // Helper to fetch peer stocks in the same sector
@@ -135,12 +149,16 @@ export function HoldingsTable({ holdings, showFundamentals }: HoldingsTableProps
                     </td>
                     <td className="px-4 py-3">
                       <div className="flex items-center gap-2">
-                        <div className="flex h-8 w-8 items-center justify-center rounded bg-market-surface/80 text-[10px] font-bold text-market-accent border border-market-border/40">
+                        <div className="flex h-8 w-8 items-center justify-center rounded bg-market-surface/80 text-[10px] font-bold text-market-accent border border-market-border/40 shrink-0">
                           {h.symbol.slice(0, 2)}
                         </div>
-                        <div>
-                          <p className="font-semibold text-market-text">{h.symbol}</p>
-                          <p className="text-[10px] text-market-muted">{h.sector}</p>
+                        <div className="min-w-0">
+                          <p className="font-semibold text-market-text text-xs leading-tight whitespace-nowrap overflow-hidden text-ellipsis max-w-[220px]" title={h.name || h.symbol}>
+                            {h.name || h.symbol}
+                          </p>
+                          <p className="text-[10px] text-market-muted truncate mt-0.5">
+                            {h.symbol} · {h.sector}
+                          </p>
                         </div>
                       </div>
                     </td>
@@ -236,11 +254,16 @@ export function HoldingsTable({ holdings, showFundamentals }: HoldingsTableProps
 
                           {/* Column 2: Fundamental Recommendations */}
                            <div className="relative overflow-hidden space-y-3 p-4 rounded-lg bg-market-card/50 border border-market-border/40 shadow-sm">
-                             <h4 className="flex items-center gap-2 font-bold text-market-up uppercase tracking-wide text-[10px] pb-1.5 border-b border-market-border/40">
-                               <Award className="h-3.5 w-3.5" />
-                               Fundamental Scorecard
+                             <h4 className="flex items-center justify-between gap-2 font-bold text-market-up uppercase tracking-wide text-[10px] pb-1.5 border-b border-market-border/40">
+                               <span className="flex items-center gap-2">
+                                 <Award className="h-3.5 w-3.5" />
+                                 Fundamental Scorecard
+                               </span>
+                               <span className="text-[9px] font-normal text-market-muted/60 normal-case tracking-normal border border-market-border/40 rounded px-1.5 py-0.5">
+                                 Data: Jun 2025
+                               </span>
                              </h4>
-                             <div>
+                             <div className={!showFundamentals ? "blur-[3.5px] select-none pointer-events-none" : ""}>
                                {h.fundamentals && h.fundamentals.marketCap > 0 ? (
                                  <div className="space-y-3 text-[11px]">
                                    <div className="flex justify-between items-center border-b border-market-border/20 pb-1.5">
@@ -279,6 +302,13 @@ export function HoldingsTable({ holdings, showFundamentals }: HoldingsTableProps
                                  </div>
                                )}
                              </div>
+                             {!showFundamentals && (
+                               <div className="absolute inset-0 z-10 flex flex-col items-center justify-center bg-market-bg/40 backdrop-blur-[1px] p-4 text-center">
+                                 <Lock className="h-4 w-4 text-market-accent mb-1 animate-bounce" />
+                                 <span className="text-[10px] font-bold tracking-wider uppercase text-market-accent font-mono">PRO Feature</span>
+                                 <p className="text-[9px] text-market-text mt-0.5 max-w-[150px] leading-snug font-medium">Sign up to unlock fundamentals &amp; financial health data.</p>
+                               </div>
+                             )}
                            </div>
 
                            {/* Column 3: Sector Peer Comparison */}
@@ -287,7 +317,7 @@ export function HoldingsTable({ holdings, showFundamentals }: HoldingsTableProps
                                <Shield className="h-3.5 w-3.5" />
                                Sector Peer Comparison
                              </h4>
-                             <div>
+                             <div className={!showFundamentals ? "blur-[3.5px] select-none pointer-events-none" : ""}>
                                {peers.length > 0 ? (
                                  <div className="space-y-2.5">
                                    <table className="w-full text-[10px]">
@@ -301,7 +331,6 @@ export function HoldingsTable({ holdings, showFundamentals }: HoldingsTableProps
                                        </tr>
                                      </thead>
                                      <tbody>
-                                       {/* Include current stock first as comparison */}
                                        {h.fundamentals && h.fundamentals.marketCap > 0 && (
                                          <tr className="font-semibold text-market-accent bg-market-accent/5">
                                            <td className="py-1">{h.symbol}*</td>
@@ -351,41 +380,293 @@ export function HoldingsTable({ holdings, showFundamentals }: HoldingsTableProps
                                  </div>
                                )}
                              </div>
+                             {!showFundamentals && (
+                               <div className="absolute inset-0 z-10 flex flex-col items-center justify-center bg-market-bg/40 backdrop-blur-[1px] p-4 text-center">
+                                 <Lock className="h-4 w-4 text-market-accent mb-1 animate-bounce" />
+                                 <span className="text-[10px] font-bold tracking-wider uppercase text-market-accent font-mono">PRO Feature</span>
+                                 <p className="text-[9px] text-market-text mt-0.5 max-w-[150px] leading-snug font-medium">Sign up to compare peer valuation, PE, and ROE metrics.</p>
+                               </div>
+                             )}
                            </div>
-                         </div>
+                        </div>
 
-                         {/* Action Recommendation & Verdict Block */}
-                         <div className="relative mt-5 overflow-hidden">
-                           <div className={`p-4 rounded-lg border flex flex-col md:flex-row md:items-center justify-between gap-4 ${rec.badgeStyle}`}>
-                             <div className="space-y-1">
-                               <div className="flex items-center gap-2">
-                                 <span className={`px-2 py-0.5 rounded text-[10px] font-bold tracking-wider uppercase border ${rec.actionColor}`}>
-                                   {rec.action}
-                                 </span>
-                                 <span className="font-semibold text-market-text text-sm">
-                                   Expert Recommendation Verdict for {h.symbol}
-                                 </span>
-                               </div>
-                               <p className="text-xs text-market-text/90 mt-1 leading-normal">
-                                 {rec.verdict}
-                               </p>
-                             </div>
-                             <div className="flex flex-col gap-1.5 md:min-w-[280px] text-[11px] bg-market-card/45 p-2.5 rounded border border-market-border/30">
-                               <div>
-                                 <span className="text-market-muted font-medium">Chart-based Action: </span>
-                                 <span className="text-market-text font-normal">{rec.technicalTip}</span>
-                               </div>
-                               <div className="border-t border-market-border/20 pt-1.5 mt-1.5">
-                                 <span className="text-market-muted font-medium">Fundamental View: </span>
-                                 <span className="text-market-text font-normal">{rec.fundamentalTip}</span>
-                               </div>
-                             </div>
-                           </div>
-                         </div>
-                      </td>
-                    </tr>
-                  )}
-                </Fragment>
+                          {/* Financial Quarters & Annual Trends */}
+                          {h.fundamentals && ((h.fundamentals.quarters && h.fundamentals.quarters.length > 0) || (h.fundamentals.annuals && h.fundamentals.annuals.length > 0)) && (
+                            <div className="relative overflow-hidden mt-5">
+                              <div className={`grid gap-5 md:grid-cols-2 ${!showFundamentals ? "blur-[3.5px] select-none pointer-events-none" : ""}`}>
+                                {/* Quarterly Performance Card */}
+                                {h.fundamentals.quarters && h.fundamentals.quarters.length > 0 && (
+                                  <div className="rounded-lg border border-market-border/40 bg-market-card/30 p-4">
+                                    <h4 className="flex items-center gap-2 font-bold text-market-accent uppercase tracking-wide text-[10px] pb-2 border-b border-market-border/40 mb-3">
+                                      <BarChart3 className="h-3.5 w-3.5 text-market-accent" />
+                                      <span>Quarterly Results (Q-o-Q)</span>
+                                      <span className="ml-auto text-[9px] normal-case font-normal text-market-muted/60">Values in ₹ Cr</span>
+                                    </h4>
+                                    <div className="overflow-x-auto">
+                                      <table className="w-full text-[10px] text-left">
+                                        <thead>
+                                          <tr className="text-market-muted border-b border-market-border/20">
+                                            <th className="pb-1.5 font-semibold">Quarter</th>
+                                            <th className="pb-1.5 text-right font-semibold">Sales</th>
+                                            <th className="pb-1.5 text-right font-semibold">OPM %</th>
+                                            <th className="pb-1.5 text-right font-semibold">Net Profit</th>
+                                            <th className="pb-1.5 text-right font-semibold">EPS</th>
+                                          </tr>
+                                        </thead>
+                                        <tbody>
+                                          {h.fundamentals.quarters.slice(-4).map((q, idx) => {
+                                            return (
+                                              <tr key={idx} className="border-b border-market-border/10 last:border-0 hover:bg-market-surface/25 transition-colors duration-150">
+                                                <td className="py-2 font-medium text-market-text">{q.period}</td>
+                                                <td className="py-2 text-right font-mono text-market-muted">{q.sales > 0 ? q.sales.toLocaleString('en-IN') : "—"}</td>
+                                                <td className="py-2 text-right font-mono text-market-muted">{q.opmPercent > 0 ? `${q.opmPercent}%` : "0%"}</td>
+                                                <td className={`py-2 text-right font-mono ${q.netProfit >= 0 ? "text-emerald-400" : "text-red-400"}`}>
+                                                  {q.netProfit.toLocaleString('en-IN')}
+                                                </td>
+                                                <td className="py-2 text-right font-mono text-market-muted">{q.eps > 0 ? q.eps.toFixed(2) : "0.00"}</td>
+                                              </tr>
+                                            );
+                                          })}
+                                        </tbody>
+                                      </table>
+                                    </div>
+                                  </div>
+                                )}
+
+                                {/* Annual Performance Card */}
+                                {h.fundamentals.annuals && h.fundamentals.annuals.length > 0 && (
+                                  <div className="rounded-lg border border-market-border/40 bg-market-card/30 p-4">
+                                    <h4 className="flex items-center gap-2 font-bold text-market-up uppercase tracking-wide text-[10px] pb-2 border-b border-market-border/40 mb-3">
+                                      <TrendingUp className="h-3.5 w-3.5 text-market-up" />
+                                      <span>Profit & Loss (Y-o-Y)</span>
+                                      <span className="ml-auto text-[9px] normal-case font-normal text-market-muted/60">Values in ₹ Cr</span>
+                                    </h4>
+                                    <div className="overflow-x-auto">
+                                      <table className="w-full text-[10px] text-left">
+                                        <thead>
+                                          <tr className="text-market-muted border-b border-market-border/20">
+                                            <th className="pb-1.5 font-semibold">Year</th>
+                                            <th className="pb-1.5 text-right font-semibold">Sales</th>
+                                            <th className="pb-1.5 text-right font-semibold">OPM %</th>
+                                            <th className="pb-1.5 text-right font-semibold">Net Profit</th>
+                                            <th className="pb-1.5 text-right font-semibold">EPS</th>
+                                          </tr>
+                                        </thead>
+                                        <tbody>
+                                          {h.fundamentals.annuals.slice(-4).map((y, idx) => {
+                                            return (
+                                              <tr key={idx} className="border-b border-market-border/10 last:border-0 hover:bg-market-surface/25 transition-colors duration-150">
+                                                <td className="py-2 font-medium text-market-text">{y.period}</td>
+                                                <td className="py-2 text-right font-mono text-market-muted">{y.sales > 0 ? y.sales.toLocaleString('en-IN') : "—"}</td>
+                                                <td className="py-2 text-right font-mono text-market-muted">{y.opmPercent > 0 ? `${y.opmPercent}%` : "0%"}</td>
+                                                <td className={`py-2 text-right font-mono ${y.netProfit >= 0 ? "text-emerald-400" : "text-red-400"}`}>
+                                                  {y.netProfit.toLocaleString('en-IN')}
+                                                </td>
+                                                <td className="py-2 text-right font-mono text-market-muted">{y.eps > 0 ? y.eps.toFixed(2) : "0.00"}</td>
+                                              </tr>
+                                            );
+                                          })}
+                                        </tbody>
+                                      </table>
+                                    </div>
+                                  </div>
+                                )}
+                              </div>
+                              {!showFundamentals && (
+                                <div className="absolute inset-0 z-10 flex flex-col items-center justify-center bg-market-bg/40 backdrop-blur-[1px] p-4 text-center">
+                                  <Lock className="h-4 w-4 text-market-accent mb-1 animate-bounce" />
+                                  <span className="text-[10px] font-bold tracking-wider uppercase text-market-accent font-mono">PRO Feature</span>
+                                  <p className="text-[9px] text-market-text mt-0.5 max-w-[180px] leading-snug font-medium">Sign up to view historical quarterly &amp; annual financial results.</p>
+                                </div>
+                              )}
+                            </div>
+                          )}
+
+                          {/* Action Recommendation & Verdict Block */}
+                          <div className="relative mt-5 overflow-hidden">
+                            <div className={`p-4 rounded-lg border flex flex-col md:flex-row md:items-center justify-between gap-4 ${rec.badgeStyle} ${!showFundamentals ? "blur-[4px] select-none pointer-events-none" : ""}`}>
+                              <div className="space-y-1">
+                                <div className="flex items-center gap-2">
+                                  <span className={`px-2 py-0.5 rounded text-[10px] font-bold tracking-wider uppercase border ${rec.actionColor}`}>
+                                    {rec.action}
+                                  </span>
+                                  <span className="font-semibold text-market-text text-sm">
+                                    Expert Recommendation Verdict for {h.name || h.symbol} ({h.symbol})
+                                  </span>
+                                </div>
+                                <p className="text-xs text-market-text/90 mt-1 leading-normal">
+                                  {rec.verdict}
+                                </p>
+                                {!h.fundamentals && (
+                                  <p className="mt-2 flex items-center gap-1.5 text-[10px] text-amber-400/80 bg-amber-950/20 border border-amber-900/30 rounded px-2 py-1">
+                                    <Info className="h-3 w-3 shrink-0" />
+                                    Based on price action only — no fundamental data tracked for this instrument.
+                                  </p>
+                                )}
+                              </div>
+                              <div className="flex flex-col gap-1.5 md:min-w-[280px] text-[11px] bg-market-card/45 p-2.5 rounded border border-market-border/30">
+                                <div>
+                                  <span className="text-market-muted font-medium">Chart-based Action: </span>
+                                  <span className="text-market-text font-normal">{rec.technicalTip}</span>
+                                </div>
+                                <div className="border-t border-market-border/20 pt-1.5 mt-1.5">
+                                  <span className="text-market-muted font-medium">Fundamental View: </span>
+                                  <span className="text-market-text font-normal">{rec.fundamentalTip}</span>
+                                </div>
+                              </div>
+                            </div>
+                            {!showFundamentals && (
+                              <div className="absolute inset-0 z-10 flex flex-col items-center justify-center bg-market-bg/60 backdrop-blur-[2px] p-4 text-center rounded-lg border border-market-accent/20">
+                                <Lock className="h-5 w-5 text-market-accent mb-1 animate-bounce" />
+                                <span className="text-xs font-bold tracking-wider uppercase text-market-accent font-mono">Expert Verdict Locked</span>
+                                <p className="text-xs text-market-text mt-1 max-w-[320px] leading-normal font-medium">
+                                  Expert recommendations and stop-loss targets are available for registered users.{" "}
+                                  <Link href="/signup" className="text-market-up underline ml-1 hover:text-market-up-dark font-semibold">Create a free account</Link> to unlock this verdict.
+                                </p>
+                              </div>
+                            )}
+                          </div>
+
+                          {/* Exit Planner */}
+                          <div className="relative mt-4 overflow-hidden">
+                            <div className="rounded-lg border border-market-border/40 bg-market-card/40 p-4">
+                              <div className={!showFundamentals ? "blur-[3.5px] select-none pointer-events-none" : ""}>
+                                <h4 className="flex items-center gap-2 font-bold text-market-muted uppercase tracking-wide text-[10px] pb-2 border-b border-market-border/40 mb-3">
+                                  <Target className="h-3.5 w-3.5 text-violet-400" />
+                                  <span className="text-violet-400">Exit Planner</span>
+                                  <span className="ml-auto text-[9px] normal-case font-normal text-market-muted/50 tracking-normal">
+                                    STT 0.1% sell-side · ₹20 brokerage · stamp duty · Budget 2024 rates
+                                  </span>
+                                </h4>
+                                {(() => {
+                                  const breakeven = computeBreakeven(h.avgPrice, h.quantity);
+                                  const implied = h.fundamentals
+                                    ? computeSectorImpliedPrice(h.currentPrice, h.fundamentals.pe, h.sector)
+                                    : { price: null, label: "No PE data", upside: null };
+                                  const stopLoss = Math.round(h.avgPrice * 0.9 * 100) / 100;
+                                  const buyDateStr = buyDates[h.symbol] ?? "";
+                                  const buyDate = buyDateStr ? new Date(buyDateStr) : null;
+                                  const tax = computeTaxBreakdown(h.returns, buyDate);
+
+                                  return (
+                                    <div className="space-y-3">
+                                      {/* Buy date input */}
+                                      <div className="flex items-center gap-2 text-[11px]">
+                                        <Pencil className="h-3 w-3 text-market-muted shrink-0" />
+                                        <label className="text-market-muted shrink-0">Purchase Date:</label>
+                                        <input
+                                          type="date"
+                                          value={buyDateStr}
+                                          max={new Date().toISOString().split("T")[0]}
+                                          onChange={(e) => setBuyDates((prev) => ({ ...prev, [h.symbol]: e.target.value }))}
+                                          className="rounded bg-market-surface border border-market-border/50 px-2 py-0.5 text-[11px] text-market-text focus:outline-none focus:border-market-accent/50"
+                                        />
+                                        {!buyDateStr && (
+                                          <span className="text-amber-400/70 text-[10px]">
+                                            ← Enter to calculate accurate tax status
+                                          </span>
+                                        )}
+                                      </div>
+
+                                      <div className="grid grid-cols-2 gap-3 sm:grid-cols-4 text-[11px]">
+                                        {/* Sector PE Implied Price */}
+                                        <div className="rounded bg-market-surface/50 p-3 border border-market-border/30">
+                                          <p className="text-market-muted text-[10px] mb-1">Sector PE Implied Price</p>
+                                          <p className={`font-mono-nums text-base font-bold ${implied.price && implied.price > h.currentPrice ? "text-market-up" : "text-market-muted"}`}>
+                                            {implied.price ? formatCurrency(implied.price) : "—"}
+                                          </p>
+                                          <p className="text-[9px] text-market-muted/70 mt-0.5">
+                                            {implied.upside !== null
+                                              ? `${implied.upside >= 0 ? "+" : ""}${implied.upside}% vs current · ${implied.label}`
+                                              : implied.label}
+                                          </p>
+                                        </div>
+
+                                        {/* Stop Loss */}
+                                        <div className="rounded bg-market-surface/50 p-3 border border-market-border/30">
+                                          <p className="text-market-muted text-[10px] mb-1">Suggested Stop Loss</p>
+                                          <p className="font-mono-nums text-base font-bold text-market-down">
+                                            {formatCurrency(stopLoss)}
+                                          </p>
+                                          <p className="text-[9px] text-market-muted/70 mt-0.5">
+                                            10% below avg cost
+                                          </p>
+                                        </div>
+
+                                        {/* Breakeven */}
+                                        <div className="rounded bg-market-surface/50 p-3 border border-market-border/30">
+                                          <p className="text-market-muted text-[10px] mb-1">Breakeven Price</p>
+                                          <p className="font-mono-nums text-base font-bold text-market-text">
+                                            {formatCurrency(breakeven)}
+                                          </p>
+                                          <p className="text-[9px] text-market-muted/70 mt-0.5">
+                                            Incl. STT, brokerage, GST &amp; stamp duty
+                                          </p>
+                                        </div>
+
+                                        {/* Tax Status */}
+                                        <div className={`rounded p-3 border ${
+                                          tax.status === "ltcg"
+                                            ? "bg-emerald-950/15 border-emerald-900/30"
+                                            : tax.status === "stcg"
+                                            ? "bg-amber-950/15 border-amber-900/30"
+                                            : "bg-market-surface/40 border-market-border/30"
+                                        }`}>
+                                          <p className="text-market-muted text-[10px] mb-1 flex items-center gap-1">
+                                            <CalendarClock className="h-3 w-3" />
+                                            Tax Status (Budget 2024)
+                                          </p>
+                                          {tax.status === "unknown" ? (
+                                            <p className="text-[10px] text-market-muted/70">Enter purchase date above to calculate</p>
+                                          ) : tax.status === "ltcg" ? (
+                                            <>
+                                              <p className="font-bold text-market-up text-[11px]">LTCG @ 12.5% ✓</p>
+                                              <p className="text-[9px] text-market-muted/70 mt-0.5">
+                                                Est. tax: {tax.profit > 0 ? `₹${tax.ltcgTax.toLocaleString("en-IN")}` : "₹0 (no profit)"}
+                                              </p>
+                                              <p className="text-[9px] text-market-muted/60 mt-0.5">
+                                                Held {tax.days} days · ₹1.25L exempt
+                                              </p>
+                                            </>
+                                          ) : (
+                                            <>
+                                              <p className="font-bold text-amber-400 text-[11px]">
+                                                STCG @ 15% · {tax.daysRemaining !== null && tax.daysRemaining > 0 ? `${tax.daysRemaining}d to LTCG` : ""}
+                                              </p>
+                                              {tax.taxSaving > 0 && (
+                                                <p className="text-[9px] text-market-up mt-0.5">
+                                                  Save ₹{tax.taxSaving.toLocaleString("en-IN")} by waiting for LTCG
+                                                </p>
+                                              )}
+                                              {tax.ltcgDate && (
+                                                <p className="text-[9px] text-market-muted/60 mt-0.5">
+                                                  LTCG from: {tax.ltcgDate.toLocaleDateString("en-IN")}
+                                                </p>
+                                              )}
+                                            </>
+                                          )}
+                                        </div>
+                                      </div>
+                                    </div>
+                                  );
+                                })()}
+                              </div>
+                              {!showFundamentals && (
+                                <div className="absolute inset-0 z-10 flex flex-col items-center justify-center bg-market-bg/50 backdrop-blur-[2px] p-4 text-center rounded-lg">
+                                  <Lock className="h-5 w-5 text-market-accent mb-1 animate-bounce" />
+                                  <span className="text-xs font-bold tracking-wider uppercase text-market-accent font-mono">Exit Planner Locked</span>
+                                  <p className="text-xs text-market-text mt-1 max-w-[320px] leading-normal font-medium">
+                                    Exit target price, Stop Loss metrics, and Tax Status optimization are available for registered users.{" "}
+                                    <Link href="/signup" className="text-market-up underline ml-1 hover:text-market-up-dark font-semibold">Create a free account</Link> to unlock this tool.
+                                  </p>
+                                </div>
+                              )}
+                            </div>
+                          </div>
+                       </td>
+                     </tr>
+                   )}
+                 </Fragment>
               );
             })}
           </tbody>

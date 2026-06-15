@@ -317,3 +317,27 @@
 .animate-glow-pulse {
   animation: pulse-glow 4s infinite ease-in-out;
 }
+
+@media print {
+  .print\:hidden {
+    display: none !important;
+  }
+  .print\:block {
+    display: block !important;
+  }
+  body, html {
+    background-color: #ffffff !important;
+    color: #000000 !important;
+  }
+  header, nav, footer, button, input, select, [role="tablist"] {
+    display: none !important;
+  }
+  * {
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+  }
+  @page {
+    size: A4;
+    margin: 12mm 15mm 12mm 15mm;
+  }
+}

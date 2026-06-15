@@ -86,26 +86,40 @@ export function getStockRecommendation(h: EnrichedHolding): StockRecommendation 
     // ---- CASE 2: HOLDING IS IN LOSS (ret <= 0) ----
     else {
       // 2a. Severe loss (ret < -12%) + high-quality fundamentals -> AVERAGE DOWN
-      if (ret < -12 && f.roe > 15 && f.debtToEquity < 0.6 && f.profitGrowth > 5) {
+      // For capital-intensive sectors (Banking, Infra, Energy, Auto), D/E threshold is relaxed
+      const isCapIntensive = [
+        "Banking & Finance", "Infrastructure", "Energy", "Auto", "Telecom", "Materials"
+      ].includes(h.sector);
+      const deThreshold = isCapIntensive ? 2.0 : 0.6;
+
+      if (ret < -12 && f.roe > 15 && f.debtToEquity < deThreshold && f.profitGrowth > 5) {
         return {
           action: "AVERAGE DOWN",
           actionColor: "text-emerald-400 border-emerald-900/30",
           badgeStyle: "bg-emerald-950/20 text-emerald-400 border-emerald-900/40",
           technicalTip: `Price is down ${Math.abs(ret).toFixed(1)}%, trading close to consolidation support at ${formatCurrency(support)}. RSI is cool at ${rsi}.`,
-          fundamentalTip: `Fundamentals remain excellent (ROE: ${f.roe}%, profit growth: +${f.profitGrowth}%, and low D/E: ${f.debtToEquity}).`,
+          fundamentalTip: `Fundamentals remain excellent (ROE: ${f.roe}%, profit growth: +${f.profitGrowth}%, D/E: ${f.debtToEquity} — within sector norms).`,
           verdict: `Strong case to average down on ${h.symbol}. High-quality business facing short-term price correction; accumulating at support lowers average cost basis for multi-year upside.`
         };
       }
 
       // 2b. Severe loss (ret < -12%) + weak/declining fundamentals -> SELL / EXIT (Cut Losses)
-      if (ret < -12 && (f.roe < 8 || f.debtToEquity > 1.2 || f.profitGrowth <= 0)) {
+      // For banking stocks, D/E is structural — use ROE & profit growth as risk signals instead
+      const isBanking = h.sector === "Banking & Finance";
+      const sellExitCondition = isBanking
+        ? (f.roe < 8 || f.profitGrowth <= 0)              // banks: use ROE + earnings
+        : (f.roe < 8 || f.debtToEquity > 1.5 || f.profitGrowth <= 0); // others: add D/E check
+
+      if (ret < -12 && sellExitCondition) {
         return {
           action: "SELL / EXIT",
           actionColor: "text-red-400 border-red-900/30",
           badgeStyle: "bg-red-950/20 text-red-400 border-red-900/40",
           technicalTip: `Suggested Stop-Loss is breached. Price action is weak. Suggested Stop-Loss (SL) was near ${formatCurrency(stopLoss)}.`,
-          fundamentalTip: `Weakening earnings growth (${f.profitGrowth}% y-o-y) or low capital efficiency (ROE: ${f.roe}%) elevates balance-sheet risks.`,
-          verdict: `We recommend cutting losses and exiting or reducing exposure in ${h.symbol}. Severe loss of ${Math.abs(ret).toFixed(1)}% combined with weak profit growth/leverage indicates capital is better deployed in stronger peers.`
+          fundamentalTip: isBanking
+            ? `Deteriorating profitability (ROE: ${f.roe}%, profit growth: ${f.profitGrowth}%) signals rising credit costs or NPA pressure.`
+            : `Weakening earnings growth (${f.profitGrowth}% y-o-y) or low capital efficiency (ROE: ${f.roe}%) elevates balance-sheet risks.`,
+          verdict: `We recommend cutting losses and exiting or reducing exposure in ${h.symbol}. Severe loss of ${Math.abs(ret).toFixed(1)}% combined with weak fundamentals indicates capital is better deployed in stronger peers.`
         };
       }
 
@@ -116,20 +130,46 @@ export function getStockRecommendation(h: EnrichedHolding): StockRecommendation 
           actionColor: "text-yellow-400 border-yellow-900/30",
           badgeStyle: "bg-yellow-950/10 text-yellow-400 border-yellow-900/30",
           technicalTip: `Stock has seen a short-term rally (RSI: ${rsi} is overbought) but you are sitting at a loss of ${Math.abs(ret).toFixed(1)}%.`,
-          fundamentalTip: `Company has moderate fundamentals (ROE: ${f.roe}%, P/E: ${f.pe.toFixed(1)}).`,
+          fundamentalTip: `Company has moderate fundamentals (ROE: ${f.roe}%, P/E: ${f.pe > 0 ? f.pe.toFixed(1) + 'x' : 'N/A'}).`,
           verdict: `Hold ${h.symbol} and avoid buying more at this short-term peak. The stock is overbought on charts, so wait for a price pullback or fundamental trend reversal before decision-making.`
         };
       }
 
-      // 2d. Low RSI / oversold -> ACCUMULATE
-      if (rsi < 40) {
+      // 2d. Low RSI / oversold + decent fundamentals -> ACCUMULATE
+      const isCapIntensiveAcc = [
+        "Banking & Finance", "Infrastructure", "Energy", "Auto", "Telecom", "Materials"
+      ].includes(h.sector);
+      const deThresholdAcc = isCapIntensiveAcc ? 2.0 : 0.8;
+      const isFundamentalStable = f.roe >= 10 && f.profitGrowth > 0 && f.debtToEquity < deThresholdAcc;
+
+      if (rsi < 40 && isFundamentalStable) {
         return {
           action: "ACCUMULATE",
           actionColor: "text-blue-400 border-blue-900/30",
           badgeStyle: "bg-blue-950/20 text-blue-400 border-blue-900/40",
           technicalTip: `Consolidating in accumulation zone (RSI: ${rsi}). Current price is near key support of ${formatCurrency(support)}.`,
-          fundamentalTip: `Decent fundamentals with ROE of ${f.roe}% and comfortable debt levels. Valuations (P/E: ${f.pe.toFixed(1)}) are attractive.`,
+          fundamentalTip: `Decent fundamentals with ROE of ${f.roe}% and stable profit growth (+${f.profitGrowth}% y-o-y). Valuation (P/E: ${f.pe > 0 ? f.pe.toFixed(1) + 'x' : 'N/A'}) is attractive.`,
           verdict: `Accumulate ${h.symbol} in a SIP or staggered format. Strong support levels and stable fundamentals represent an attractive risk-reward profile.`
+        };
+      }
+
+      // 2e. Moderate loss + weakening fundamentals -> TRIM / REDUCE
+      // For banking stocks, skip D/E check (structural leverage); use earnings deterioration only
+      const isBankingForTrim = h.sector === "Banking & Finance";
+      const trimCondition = isBankingForTrim
+        ? (f.profitGrowth <= 3)                             // banks: profit growth only
+        : (f.profitGrowth <= 3 || f.debtToEquity > 1.5);   // others: profit growth or high D/E
+
+      if (ret < -5 && trimCondition) {
+        return {
+          action: "TRIM / REDUCE",
+          actionColor: "text-orange-400 border-orange-900/30",
+          badgeStyle: "bg-orange-950/20 text-orange-400 border-orange-900/40",
+          technicalTip: `Stock is down ${Math.abs(ret).toFixed(1)}% with no strong recovery signal (RSI: ${rsi}). Consider reducing exposure before losses deepen.`,
+          fundamentalTip: f.profitGrowth <= 3
+            ? `Slowing profit growth (${f.profitGrowth}% y-o-y) with a moderate loss warrants reducing position size.`
+            : `Elevated debt levels (D/E: ${f.debtToEquity}) combined with current losses increase balance-sheet risk.`,
+          verdict: `Consider trimming your position in ${h.symbol} by 30–50%. The combination of moderate loss and weakening fundamentals suggests capital can be better deployed elsewhere while limiting further downside.`
         };
       }
     }
@@ -181,6 +221,7 @@ export interface BasicAnalysis {
   benchmarkComparison: BenchmarkComparison[];
   suggestions: Suggestion[];
   concentrationRisk: { top3Weight: number; top5Weight: number };
+  healthScore: number;
 }
 
 export interface FullAnalysis extends BasicAnalysis {
@@ -256,7 +297,7 @@ function mapEnrichedHolding(
 
 async function enrichHoldings(holdings: ParsedHolding[]): Promise<EnrichedHolding[]> {
   const enriched = await enrichHoldingsBatch(
-    holdings.map((h) => ({ symbol: h.symbol, avgPrice: h.avgPrice }))
+    holdings.map((h) => ({ symbol: h.symbol, name: h.name, avgPrice: h.avgPrice }))
   );
   return holdings.map((h, i) => mapEnrichedHolding(h, enriched[i]));
 }
@@ -329,6 +370,47 @@ function sortSuggestions(suggestions: Suggestion[]): Suggestion[] {
     const priorityOrder = { high: 0, medium: 1, low: 2 };
     return priorityOrder[a.priority] - priorityOrder[b.priority];
   });
+}
+
+/**
+ * Compute a 0–100 Portfolio Health Score for all users (free + pro).
+ * Factors: diversification, concentration penalty, P&L health, recommendation quality.
+ */
+export function computeBasicHealthScore(
+  holdings: EnrichedHolding[],
+  concentrationRisk: { top3Weight: number; top5Weight: number }
+): number {
+  if (holdings.length === 0) return 0;
+
+  // 1. Diversification score (0-25): reward more unique sectors and stocks
+  const sectors = new Set(holdings.map((h) => h.sector).filter((s) => s !== "Unknown"));
+  const sectorScore = Math.min(sectors.size / 6, 1) * 15; // max 15 pts at 6+ sectors
+  const stockCountScore = Math.min(holdings.length / 10, 1) * 10; // max 10 pts at 10+ stocks
+
+  // 2. Concentration penalty (0-25): lower top-3 weight = better
+  const concentrationScore = Math.max(0, 25 - (concentrationRisk.top3Weight / 100) * 25);
+
+  // 3. P&L health (0-25): % of holdings in profit
+  const profitable = holdings.filter((h) => h.returnsPercent > 0).length;
+  const plScore = (profitable / holdings.length) * 25;
+
+  // 4. Recommendation quality (0-25): healthy = HOLD/ACCUMULATE/AVERAGE DOWN, unhealthy = SELL/TRIM
+  const recScoreMap: Record<string, number> = {
+    "ACCUMULATE": 25,
+    "AVERAGE DOWN": 20,
+    "HOLD": 18,
+    "BOOK PROFITS": 12,
+    "TRIM / REDUCE": 6,
+    "SELL / EXIT": 0,
+  };
+  const avgRecScore =
+    holdings.reduce((sum, h) => {
+      const rec = getStockRecommendation(h);
+      return sum + (recScoreMap[rec.action] ?? 10);
+    }, 0) / holdings.length;
+
+  const total = Math.round(sectorScore + stockCountScore + concentrationScore + plScore + avgRecScore);
+  return Math.min(100, Math.max(0, total));
 }
 
 /** Recommendations available to free / guest users */
@@ -483,6 +565,8 @@ export async function analyzeBasic(holdings: ParsedHolding[]): Promise<BasicAnal
   const totalReturnsPercent = totalInvested > 0 ? (totalReturns / totalInvested) * 100 : 0;
   const portfolioReturn = computePortfolioReturn(enriched);
 
+  const concentration = computeConcentration(enriched);
+
   return {
     totalInvested,
     totalValue,
@@ -493,7 +577,8 @@ export async function analyzeBasic(holdings: ParsedHolding[]): Promise<BasicAnal
     topHoldings: [...enriched].sort((a, b) => b.currentValue - a.currentValue).slice(0, 5),
     benchmarkComparison: buildBenchmarkComparison(portfolioReturn, benchmarks),
     suggestions: generateBasicSuggestions(enriched, benchmarks.nifty50.yearReturn),
-    concentrationRisk: computeConcentration(enriched),
+    concentrationRisk: concentration,
+    healthScore: computeBasicHealthScore(enriched, concentration),
   };
 }
 

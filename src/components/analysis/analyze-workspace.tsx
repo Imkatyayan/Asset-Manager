@@ -3,12 +3,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { CheckCircle2, Save } from "lucide-react";
 import { CsvUpload } from "@/components/analysis/csv-upload";
-import { PortfolioSummary } from "@/components/analysis/portfolio-summary";
-import { AllocationChart } from "@/components/analysis/allocation-chart";
-import { BenchmarkComparison } from "@/components/analysis/benchmark-comparison";
-import { HoldingsTable } from "@/components/analysis/holdings-table";
-import { FullAnalysisView } from "@/components/analysis/full-analysis";
-import { SuggestionsPanel } from "@/components/analysis/suggestions-panel";
+import { PortfolioDashboardView } from "@/components/analysis/portfolio-dashboard-view";
 import { Button } from "@/components/ui/button";
 import type { FullAnalysis } from "@/lib/analysis";
 import {
@@ -170,26 +165,11 @@ export function AnalyzeWorkspace({ isAuthenticated }: AnalyzeWorkspaceProps) {
             )}
           </div>
 
-          <PortfolioSummary analysis={result.analysis} />
-
-          <div className="grid gap-5 lg:grid-cols-2">
-            <AllocationChart data={result.analysis.sectorAllocation} />
-            <BenchmarkComparison data={result.analysis.benchmarkComparison} />
-          </div>
-
-          <SuggestionsPanel
-            suggestions={result.analysis.suggestions}
-            tier={result.tier === "full" ? "full" : "basic"}
+          <PortfolioDashboardView 
+            analysis={result.analysis} 
+            tier={result.tier === "full" ? "full" : "basic"} 
+            showSipTracker={true} 
           />
-
-          <HoldingsTable
-            holdings={result.analysis.holdings}
-            showFundamentals={result.tier === "full"}
-          />
-
-          {result.tier === "full" && (
-            <FullAnalysisView analysis={result.analysis as FullAnalysis} />
-          )}
 
           {result.warnings && result.warnings.length > 0 && (
             <div className="rounded-lg border border-market-warning/30 bg-amber-950/20 px-4 py-3 text-xs text-market-warning">
