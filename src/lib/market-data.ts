@@ -1273,6 +1273,7 @@ export async function fetchFinologyRatios(symbol: string): Promise<ScrapedFundam
 const getFs = () => {
   if (typeof window === "undefined") {
     try {
+      // eslint-disable-next-line @typescript-eslint/no-require-imports
       return require("fs");
     } catch {
       return null;
@@ -1284,6 +1285,7 @@ const getFs = () => {
 const getPath = () => {
   if (typeof window === "undefined") {
     try {
+      // eslint-disable-next-line @typescript-eslint/no-require-imports
       return require("path");
     } catch {
       return null;
@@ -1312,7 +1314,7 @@ function loadCacheFromDisk(): Map<string, { data: ScrapedFundamentals | null; fe
       const raw = fs.readFileSync(filePath, "utf-8");
       const parsed = JSON.parse(raw);
       for (const [key, value] of Object.entries(parsed)) {
-        cache.set(key, value as any);
+        cache.set(key, value as { data: ScrapedFundamentals | null; fetchedAt: number });
       }
       console.log(`[Cache] Loaded ${cache.size} entries from ${CACHE_FILE_NAME}`);
     }

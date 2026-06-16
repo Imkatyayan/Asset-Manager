@@ -5,7 +5,6 @@ import { CheckCircle2, Save } from "lucide-react";
 import { CsvUpload } from "@/components/analysis/csv-upload";
 import { PortfolioDashboardView } from "@/components/analysis/portfolio-dashboard-view";
 import { Button } from "@/components/ui/button";
-import type { FullAnalysis } from "@/lib/analysis";
 import {
   loadAnalysisSession,
   saveAnalysisSession,

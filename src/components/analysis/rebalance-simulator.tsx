@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { formatCurrency, formatPercent, formatNumber } from "@/lib/utils";
+import { formatCurrency } from "@/lib/utils";
 import type { EnrichedHolding } from "@/lib/analysis";
 import { getStockRecommendation } from "@/lib/analysis";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
@@ -13,10 +13,7 @@ import {
   Activity, 
   ShieldCheck, 
   Info,
-  Lock,
-  ArrowRightLeft,
-  ShieldAlert,
-  SlidersHorizontal
+  Lock
 } from "lucide-react";
 
 interface RebalanceSimulatorProps {
@@ -91,7 +88,7 @@ export function RebalanceSimulator({ holdings, tier = "basic" }: RebalanceSimula
       safetyCounter++;
 
       // Compute simulated values & weights dynamically based on current simulated purchases
-      let simulatedTotalValue = totalValue + (cash - unusedCash);
+      const simulatedTotalValue = totalValue + (cash - unusedCash);
       const simulatedHoldings = holdings.map(h => {
         const qtyBought = suggestedBuys.get(h.symbol) ?? 0;
         const value = h.currentValue + (qtyBought * h.currentPrice);

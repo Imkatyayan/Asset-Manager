@@ -116,7 +116,7 @@ export function SIPTracker({ holdings }: SIPTrackerProps) {
               </tr>
             </thead>
             <tbody>
-              {entries.map((entry, i) => (
+              {entries.map((entry) => (
                 <tr
                   key={entry.id}
                   className="border-b border-market-border/30 hover:bg-market-surface/30 transition-colors"
