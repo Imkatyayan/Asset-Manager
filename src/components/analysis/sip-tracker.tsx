@@ -128,9 +128,9 @@ export function SIPTracker({ holdings }: SIPTrackerProps) {
                       className="w-full rounded bg-market-surface border border-market-border/50 px-2 py-1 text-xs text-market-text focus:outline-none focus:border-market-accent/50"
                     >
                       <option value="">Select stock</option>
-                      {holdings.map((h) => (
-                        <option key={h.symbol} value={h.symbol}>
-                          {h.symbol}
+                      {Array.from(new Set(holdings.map(h => h.symbol))).map((sym) => (
+                        <option key={sym} value={sym}>
+                          {sym}
                         </option>
                       ))}
                     </select>

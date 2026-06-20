@@ -14,6 +14,7 @@ export interface SessionUser {
   id: string;
   name: string;
   email: string;
+  role: string;
 }
 
 export async function hashPassword(password: string): Promise<string> {
@@ -32,6 +33,7 @@ export async function createSession(user: SessionUser): Promise<void> {
     id: user.id,
     name: user.name,
     email: user.email,
+    role: user.role,
   })
     .setProtectedHeader({ alg: "HS256" })
     .setExpirationTime(`${SESSION_DURATION}s`)
@@ -58,6 +60,7 @@ export async function getSession(): Promise<SessionUser | null> {
       id: payload.id as string,
       name: payload.name as string,
       email: payload.email as string,
+      role: (payload.role as string) || "user",
     };
   } catch {
     return null;
@@ -83,7 +86,7 @@ export async function registerUser(
   });
 
   return {
-    user: { id: user.id, name: user.name || "User", email: user.email },
+    user: { id: user.id, name: user.name || "User", email: user.email, role: user.role },
   };
 }
 
@@ -98,6 +101,6 @@ export async function loginUser(
   if (!valid) return { error: "Invalid email or password" };
 
   return {
-    user: { id: user.id, name: user.name || "User", email: user.email },
+    user: { id: user.id, name: user.name || "User", email: user.email, role: user.role },
   };
 }

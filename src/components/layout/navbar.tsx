@@ -2,21 +2,21 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { BarChart3, LogOut, Menu, X, LayoutDashboard, PieChart, Upload, HelpCircle, LineChart } from "lucide-react";
+import { BarChart3, LogOut, Menu, X, LayoutDashboard, PieChart, Upload, HelpCircle, LineChart, ShieldCheck } from "lucide-react";
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { ThemeToggle } from "@/components/layout/theme-toggle";
 import { cn } from "@/lib/utils";
 
 interface NavbarProps {
-  user?: { name: string; email: string } | null;
+  user?: { name: string; email: string; role?: string } | null;
 }
 
 export function Navbar({ user }: NavbarProps) {
   const pathname = usePathname();
   const [mobileOpen, setMobileOpen] = useState(false);
 
-  const navLinks = user
+  const baseLinks = user
     ? [
       { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
       { href: "/markets", label: "Markets", icon: LineChart },
@@ -28,6 +28,10 @@ export function Navbar({ user }: NavbarProps) {
       { href: "/analyze", label: "Analyze", icon: Upload },
       { href: "/support", label: "Support", icon: HelpCircle },
     ];
+
+  const navLinks = user?.role === "admin"
+    ? [...baseLinks, { href: "/admin", label: "Admin Panel", icon: ShieldCheck }]
+    : baseLinks;
 
   async function handleLogout() {
     await fetch("/api/auth/logout", { method: "POST" });

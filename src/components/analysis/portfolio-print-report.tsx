@@ -208,10 +208,10 @@ export function PortfolioPrintReport({
             </tr>
           </thead>
           <tbody>
-            {sortedHoldings.map((h) => {
+            {sortedHoldings.map((h, index) => {
               const rec = getStockRecommendation(h);
               return (
-                <tr key={h.symbol} className="border-b border-stone-200 last:border-0 hover:bg-stone-50 transition-colors">
+                <tr key={`${h.symbol}-${index}`} className="border-b border-stone-200 last:border-0 hover:bg-stone-50 transition-colors">
                   <td className="px-2 py-2">
                     <div className="font-bold text-stone-900">{h.symbol}</div>
                     <div className="text-[8px] text-stone-500 truncate max-w-[140px]">{h.name}</div>

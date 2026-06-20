@@ -59,6 +59,7 @@ export async function POST(req: NextRequest) {
         email: true,
         address: true,
         mobile: true,
+        role: true,
       },
     });
 
@@ -67,6 +68,7 @@ export async function POST(req: NextRequest) {
       id: user.id,
       name: user.name || "User",
       email: user.email,
+      role: user.role,
     });
 
     return NextResponse.json({ success: true, user });

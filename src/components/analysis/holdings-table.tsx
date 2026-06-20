@@ -76,7 +76,7 @@ export function HoldingsTable({ holdings, showFundamentals }: HoldingsTableProps
             </tr>
           </thead>
           <tbody>
-            {sorted.map((h) => {
+            {sorted.map((h, index) => {
               const isExpanded = expandedSymbol === h.symbol;
               const peers = getSectorPeers(h.symbol, h.sector);
               const ltp = h.currentPrice;
@@ -133,7 +133,7 @@ export function HoldingsTable({ holdings, showFundamentals }: HoldingsTableProps
               }
 
               return (
-                <Fragment key={h.symbol}>
+                <Fragment key={`${h.symbol}-${index}`}>
                   <tr
                     onClick={() => setExpandedSymbol(isExpanded ? null : h.symbol)}
                     className={`border-b border-market-border/50 hover:bg-market-surface/40 transition-all duration-200 cursor-pointer select-none ${
