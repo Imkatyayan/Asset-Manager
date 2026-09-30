@@ -644,7 +644,7 @@ export function StockProIntelligence({ symbol, name }: StockProIntelligenceProps
       {/* ======================================================== */}
       {showUpgradeModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/75 backdrop-blur-sm p-4">
-          <div className="relative w-full max-w-lg rounded-2xl border border-amber-500/40 bg-market-panel p-6 shadow-2xl space-y-5 animate-in fade-in zoom-in-95 duration-200">
+          <div className="relative w-full max-w-lg rounded-2xl border border-amber-500/40 bg-market-card p-6 shadow-2xl space-y-5 animate-in fade-in zoom-in-95 duration-200">
             <div className="flex items-center justify-between border-b border-market-border pb-3">
               <div className="flex items-center gap-2">
                 <Crown className="h-5 w-5 text-amber-400" />

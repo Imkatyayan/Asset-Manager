@@ -20,6 +20,7 @@ model User {
   updatedAt    DateTime    @updatedAt
   portfolios   Portfolio[]
   notes        Note[]
+  watchlist    WatchlistItem[]
 }
 
 model Portfolio {
@@ -69,6 +70,22 @@ model Note {
   color     String?  @default("emerald")
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+}
+
+model WatchlistItem {
+  id          String   @id @default(cuid())
+  userId      String
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  symbol      String
+  yahooSymbol String
+  name        String
+  exchange    String   @default("NSE")
+  targetPrice Float?
+  notes       String?
+  order       Int      @default(0)
+  createdAt   DateTime @default(now())
+
+  @@unique([userId, symbol])
 }
 
 

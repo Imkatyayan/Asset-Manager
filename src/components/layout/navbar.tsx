@@ -2,10 +2,11 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { BarChart3, LogOut, Menu, X, LayoutDashboard, PieChart, Upload, HelpCircle, LineChart, ShieldCheck, StickyNote } from "lucide-react";
+import { BarChart3, LogOut, Menu, X, LayoutDashboard, PieChart, Upload, LineChart, ShieldCheck, StickyNote, Star } from "lucide-react";
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { ThemeToggle } from "@/components/layout/theme-toggle";
+import { HeaderWatchlist } from "@/components/layout/header-watchlist";
 import { cn } from "@/lib/utils";
 
 interface NavbarProps {
@@ -22,12 +23,10 @@ export function Navbar({ user }: NavbarProps) {
       { href: "/markets", label: "Markets", icon: LineChart },
       { href: "/portfolio", label: "Holdings", icon: PieChart },
       { href: "/notes", label: "Notes", icon: StickyNote },
-      { href: "/support", label: "Support", icon: HelpCircle },
     ]
     : [
       { href: "/markets", label: "Markets", icon: LineChart },
       { href: "/analyze", label: "Analyze", icon: Upload },
-      { href: "/support", label: "Support", icon: HelpCircle },
     ];
 
   const navLinks = user?.role === "admin"
@@ -54,19 +53,21 @@ export function Navbar({ user }: NavbarProps) {
 
         <div className="hidden items-center gap-1 md:flex">
           {navLinks.map((link) => (
-            <Link
-              key={link.href}
-              href={link.href}
-              className={cn(
-                "flex items-center gap-1.5 rounded-md px-3.5 py-1.5 text-sm font-medium transition-all duration-300",
-                pathname === link.href
-                  ? "bg-market-card text-market-up border border-market-border/40 font-semibold"
-                  : "text-market-muted hover:bg-market-card hover:text-market-text hover:scale-[1.01]"
-              )}
-            >
-              <link.icon className="h-3.5 w-3.5 group-hover:animate-pulse" />
-              {link.label}
-            </Link>
+            <div key={link.href} className="contents">
+              <Link
+                href={link.href}
+                className={cn(
+                  "flex items-center gap-1.5 rounded-md px-3.5 py-1.5 text-sm font-medium transition-all duration-300",
+                  pathname === link.href
+                    ? "bg-market-card text-market-up border border-market-border/40 font-semibold"
+                    : "text-market-muted hover:bg-market-card hover:text-market-text hover:scale-[1.01]"
+                )}
+              >
+                <link.icon className="h-3.5 w-3.5 group-hover:animate-pulse" />
+                {link.label}
+              </Link>
+              {link.href === "/markets" && <HeaderWatchlist />}
+            </div>
           ))}
         </div>
 
@@ -113,15 +114,31 @@ export function Navbar({ user }: NavbarProps) {
             <ThemeToggle />
           </div>
           {navLinks.map((link) => (
-            <Link
-              key={link.href}
-              href={link.href}
-              className="flex items-center gap-2 rounded-md px-3 py-2.5 text-sm text-market-muted hover:bg-market-card"
-              onClick={() => setMobileOpen(false)}
-            >
-              <link.icon className="h-4 w-4" />
-              {link.label}
-            </Link>
+            <div key={link.href} className="contents">
+              <Link
+                href={link.href}
+                className="flex items-center gap-2 rounded-md px-3 py-2.5 text-sm text-market-muted hover:bg-market-card"
+                onClick={() => setMobileOpen(false)}
+              >
+                <link.icon className="h-4 w-4" />
+                {link.label}
+              </Link>
+              {link.href === "/markets" && (
+                <Link
+                  href="/watchlist"
+                  className={cn(
+                    "flex items-center gap-2 rounded-md px-3 py-2.5 text-sm transition-colors",
+                    pathname === "/watchlist"
+                      ? "text-amber-400 bg-market-card font-semibold"
+                      : "text-market-muted hover:bg-market-card"
+                  )}
+                  onClick={() => setMobileOpen(false)}
+                >
+                  <Star className="h-4 w-4 fill-amber-400 text-amber-400" />
+                  Watchlist
+                </Link>
+              )}
+            </div>
           ))}
         </div>
       )}

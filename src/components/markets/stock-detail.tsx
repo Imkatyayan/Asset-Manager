@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import {
   TrendingUp,
   TrendingDown,
@@ -13,6 +13,7 @@ import {
   Shield,
   Gauge,
   Sliders,
+  Star,
 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { PriceChart } from "./price-chart";
@@ -84,6 +85,121 @@ export function StockDetail({ selection }: StockDetailProps) {
   const [error, setError] = useState<string | null>(null);
   const [chartRange, setChartRange] = useState<ChartRange>("1mo");
   const [financialTab, setFinancialTab] = useState<"quarters" | "annuals">("quarters");
+  const [isStarred, setIsStarred] = useState(false);
+  const [togglingStar, setTogglingStar] = useState(false);
+
+  const checkStarredStatus = useCallback(async (sym: string) => {
+    try {
+      const res = await fetch("/api/watchlist");
+      if (res.ok) {
+        const data = await res.json();
+        if (data.authenticated && Array.isArray(data.items)) {
+          const found = data.items.some(
+            (i: { symbol: string }) => i.symbol.toUpperCase() === sym.toUpperCase()
+          );
+          setIsStarred(found);
+          return;
+        }
+      }
+      if (typeof window !== "undefined") {
+        const local = localStorage.getItem("asset_manager_watchlist_guest");
+        if (local) {
+          const parsed = JSON.parse(local);
+          if (Array.isArray(parsed)) {
+            setIsStarred(
+              parsed.some(
+                (i: { symbol: string }) => i.symbol.toUpperCase() === sym.toUpperCase()
+              )
+            );
+            return;
+          }
+        }
+      }
+      setIsStarred(false);
+    } catch {
+      setIsStarred(false);
+    }
+  }, []);
+
+  const handleToggleWatchlist = async () => {
+    if (!quote) return;
+    setTogglingStar(true);
+    const sym = quote.symbol.toUpperCase();
+    try {
+      const res = await fetch("/api/watchlist/toggle", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          symbol: sym,
+          yahooSymbol: quote.yahooSymbol,
+          name: quote.name,
+          exchange: quote.exchange,
+        }),
+      });
+
+      if (res.ok) {
+        const data = await res.json();
+        setIsStarred(data.starred);
+        window.dispatchEvent(new Event("watchlist-updated"));
+      } else {
+        const errData = await res.json();
+        if (errData.authenticated === false && typeof window !== "undefined") {
+          const local = localStorage.getItem("asset_manager_watchlist_guest");
+          let list: Array<{
+            id: string;
+            symbol: string;
+            yahooSymbol: string;
+            name: string;
+            exchange: string;
+            price: number;
+            change: number;
+            changePercent: number;
+          }> = [];
+          if (local) {
+            try {
+              list = JSON.parse(local);
+            } catch {
+              list = [];
+            }
+          }
+          const exists = list.some((i) => i.symbol.toUpperCase() === sym);
+          if (exists) {
+            list = list.filter((i) => i.symbol.toUpperCase() !== sym);
+            setIsStarred(false);
+          } else {
+            list.unshift({
+              id: `guest-${Date.now()}-${sym}`,
+              symbol: sym,
+              yahooSymbol: quote.yahooSymbol,
+              name: quote.name,
+              exchange: quote.exchange,
+              price: quote.price,
+              change: quote.change,
+              changePercent: quote.changePercent,
+            });
+            setIsStarred(true);
+          }
+          localStorage.setItem("asset_manager_watchlist_guest", JSON.stringify(list));
+          window.dispatchEvent(new Event("watchlist-updated"));
+        }
+      }
+    } catch {
+      // ignore
+    } finally {
+      setTogglingStar(false);
+    }
+  };
+
+  useEffect(() => {
+    if (selection) {
+      checkStarredStatus(selection.symbol);
+    }
+    const handleSync = () => {
+      if (selection) checkStarredStatus(selection.symbol);
+    };
+    window.addEventListener("watchlist-updated", handleSync);
+    return () => window.removeEventListener("watchlist-updated", handleSync);
+  }, [selection, checkStarredStatus]);
 
   useEffect(() => {
     if (!selection) {
@@ -194,6 +310,22 @@ export function StockDetail({ selection }: StockDetailProps) {
                     P/E {fin.pe}
                   </span>
                 )}
+                {/* Watchlist Star Button */}
+                <button
+                  type="button"
+                  onClick={handleToggleWatchlist}
+                  disabled={togglingStar}
+                  className={cn(
+                    "flex items-center gap-1.5 rounded-full px-2.5 py-0.5 text-xs font-semibold border transition-all duration-150 ml-1",
+                    isStarred
+                      ? "bg-amber-500/15 border-amber-500/40 text-amber-300 hover:bg-amber-500/25"
+                      : "bg-market-surface border-market-border text-market-muted hover:border-amber-400/60 hover:text-amber-300"
+                  )}
+                  title={isStarred ? "Starred in watchlist (click to remove)" : "Star and add to watchlist"}
+                >
+                  <Star className={cn("h-3.5 w-3.5", isStarred && "fill-amber-400 text-amber-400")} />
+                  <span>{isStarred ? "Starred" : "Watchlist"}</span>
+                </button>
               </div>
               <p className="mt-1 text-xs sm:text-sm text-market-muted">
                 {quote.symbol} · {quote.exchange}
