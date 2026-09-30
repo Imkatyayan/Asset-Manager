@@ -6,6 +6,7 @@ import { Navbar } from "@/components/layout/navbar";
 import { MarketTicker } from "@/components/layout/market-ticker";
 import { ThemeProvider } from "@/components/layout/theme-provider";
 import { Footer } from "@/components/layout/footer";
+import { NotesWidget } from "@/components/notes/notes-widget";
 
 const inter = Inter({ subsets: ["latin"], variable: "--font-sans" });
 const jetbrains = JetBrains_Mono({ subsets: ["latin"], variable: "--font-mono" });
@@ -31,6 +32,7 @@ export default async function RootLayout({
           <MarketTicker />
           <main className="min-h-[calc(100vh-6rem)]">{children}</main>
           <Footer />
+          {session && <NotesWidget />}
         </ThemeProvider>
       </body>
     </html>

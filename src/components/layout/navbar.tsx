@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { BarChart3, LogOut, Menu, X, LayoutDashboard, PieChart, Upload, HelpCircle, LineChart, ShieldCheck } from "lucide-react";
+import { BarChart3, LogOut, Menu, X, LayoutDashboard, PieChart, Upload, HelpCircle, LineChart, ShieldCheck, StickyNote } from "lucide-react";
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { ThemeToggle } from "@/components/layout/theme-toggle";
@@ -21,6 +21,7 @@ export function Navbar({ user }: NavbarProps) {
       { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
       { href: "/markets", label: "Markets", icon: LineChart },
       { href: "/portfolio", label: "Holdings", icon: PieChart },
+      { href: "/notes", label: "Notes", icon: StickyNote },
       { href: "/support", label: "Support", icon: HelpCircle },
     ]
     : [

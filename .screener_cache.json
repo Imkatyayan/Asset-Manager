@@ -950,14 +950,14 @@
         }
       ]
     },
-    "fetchedAt": 1790448229295
+    "fetchedAt": 1790792472608
   },
   "DIXON": {
     "data": {
-      "marketCap": 70530,
-      "pe": 92.9,
+      "marketCap": 76461,
+      "pe": 101,
       "bookValue": 533,
-      "dividendYield": 0.07,
+      "dividendYield": 0.06,
       "roe": 28,
       "salesGrowth3Y": -17,
       "profitGrowth3Y": 53,
@@ -1142,7 +1142,7 @@
         }
       ]
     },
-    "fetchedAt": 1781987642668
+    "fetchedAt": 1790792472631
   },
   "ETERNAL": {
     "data": {
@@ -3330,10 +3330,10 @@
   },
   "CDSL": {
     "data": {
-      "marketCap": 25663,
-      "pe": 54.8,
+      "marketCap": 28639,
+      "pe": 61.2,
       "bookValue": 76.5,
-      "dividendYield": 1.02,
+      "dividendYield": 0.91,
       "roe": 31.3,
       "salesGrowth3Y": 29,
       "profitGrowth3Y": 20,
@@ -3518,14 +3518,14 @@
         }
       ]
     },
-    "fetchedAt": 1781987439336
+    "fetchedAt": 1790792472595
   },
   "COCHINSHIP": {
     "data": {
-      "marketCap": 37471,
-      "pe": 58.3,
+      "marketCap": 38357,
+      "pe": 59.6,
       "bookValue": 224,
-      "dividendYield": 0.68,
+      "dividendYield": 0.67,
       "roe": 11.2,
       "salesGrowth3Y": 23,
       "profitGrowth3Y": 31,
@@ -3710,7 +3710,7 @@
         }
       ]
     },
-    "fetchedAt": 1781987439308
+    "fetchedAt": 1790792472574
   },
   "HAL": {
     "data": {
@@ -4098,10 +4098,10 @@
   },
   "KALYANKJIL": {
     "data": {
-      "marketCap": 35604,
-      "pe": 27.1,
+      "marketCap": 39606,
+      "pe": 30.2,
       "bookValue": 59.3,
-      "dividendYield": 0.44,
+      "dividendYield": 0.39,
       "roe": 24.1,
       "salesGrowth3Y": 39,
       "profitGrowth3Y": 47,
@@ -4279,7 +4279,7 @@
         }
       ]
     },
-    "fetchedAt": 1781987439374
+    "fetchedAt": 1790792472706
   },
   "PFC": {
     "data": {
@@ -4471,7 +4471,7 @@
         }
       ]
     },
-    "fetchedAt": 1790448229345
+    "fetchedAt": 1790792472762
   },
   "RVNL": {
     "data": {
@@ -6220,7 +6220,7 @@
         }
       ]
     },
-    "fetchedAt": 1790448229375
+    "fetchedAt": 1790792472745
   },
   "POONAWALLA": {
     "data": {
@@ -6986,10 +6986,10 @@
   },
   "IRCON": {
     "data": {
-      "marketCap": 12989,
-      "pe": 21,
+      "marketCap": 12903,
+      "pe": 20.9,
       "bookValue": 70.5,
-      "dividendYield": 1.92,
+      "dividendYield": 1.93,
       "roe": 9.61,
       "salesGrowth3Y": -5,
       "profitGrowth3Y": -7,
@@ -7174,7 +7174,7 @@
         }
       ]
     },
-    "fetchedAt": 1781987643455
+    "fetchedAt": 1790792472723
   },
   "IOC": {
     "data": {
@@ -8014,10 +8014,10 @@
   },
   "HUDCO": {
     "data": {
-      "marketCap": 41977,
+      "marketCap": 41770,
       "pe": 10.4,
       "bookValue": 110,
-      "dividendYield": 2.17,
+      "dividendYield": 2.18,
       "roe": 20.2,
       "salesGrowth3Y": 23,
       "profitGrowth3Y": 33,
@@ -8202,7 +8202,7 @@
         }
       ]
     },
-    "fetchedAt": 1781987642679
+    "fetchedAt": 1790792472691
   },
   "HINDALCO": {
     "data": {
@@ -8394,7 +8394,7 @@
         }
       ]
     },
-    "fetchedAt": 1790448229285
+    "fetchedAt": 1790792472651
   },
   "HDFCBANK": {
     "data": {
@@ -11779,7 +11779,7 @@
         }
       ]
     },
-    "fetchedAt": 1781987643777
+    "fetchedAt": 1790792472731
   },
   "IRB": {
     "data": {

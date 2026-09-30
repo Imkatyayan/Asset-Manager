@@ -18,6 +18,7 @@ model User {
   createdAt    DateTime    @default(now())
   updatedAt    DateTime    @updatedAt
   portfolios   Portfolio[]
+  notes        Note[]
 }
 
 model Portfolio {
@@ -52,4 +53,21 @@ model PasswordResetToken {
   expiresAt DateTime
   createdAt DateTime @default(now())
 }
+
+model Note {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  title     String
+  content   String
+  category  String   @default("analysis") // analysis, thoughts, todo, bucket_list, pointers
+  tags      String?
+  symbol    String?
+  sentiment String?  // bullish, bearish, neutral
+  pinned    Boolean  @default(false)
+  color     String?  @default("emerald")
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
 
