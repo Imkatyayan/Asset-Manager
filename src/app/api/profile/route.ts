@@ -60,6 +60,7 @@ export async function POST(req: NextRequest) {
         address: true,
         mobile: true,
         role: true,
+        plan: true,
       },
     });
 
@@ -69,6 +70,7 @@ export async function POST(req: NextRequest) {
       name: user.name || "User",
       email: user.email,
       role: user.role,
+      plan: user.plan || (user.role === "admin" ? "pro" : "free"),
     });
 
     return NextResponse.json({ success: true, user });

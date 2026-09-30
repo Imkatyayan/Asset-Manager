@@ -1,5 +1,17 @@
-import { deriveTrend, rsi, sma } from "./technical-indicators";
+import {
+  deriveTrend,
+  rsi,
+  sma,
+  ema,
+  macd,
+  bollingerBands,
+  pivotPoints,
+  type MacdResult,
+  type BollingerBandsResult,
+  type PivotPointsResult,
+} from "./technical-indicators";
 import { guessSector, normalizeSector, resolveSector } from "./sector-utils";
+import type { PerformancePeriod } from "./market-data";
 
 const USER_AGENT =
   "Mozilla/5.0 (compatible; PortfolioIQ/1.0; +https://github.com/portfolioiq)";
@@ -33,8 +45,32 @@ export interface QuoteIndicators {
   sma20: number | null;
   sma50: number | null;
   sma200: number | null;
+  ema20: number | null;
+  ema50: number | null;
   rsi14: number | null;
   trend: "bullish" | "neutral" | "bearish";
+  macd: MacdResult | null;
+  bollinger: BollingerBandsResult | null;
+  pivots: PivotPointsResult | null;
+  distanceFrom50Dma: number | null;
+  distanceFrom200Dma: number | null;
+  range52WeekPercent: number | null;
+}
+
+export interface StockFinancials {
+  pe?: number | null;
+  pb?: number | null;
+  roe?: number | null;
+  debtToEquity?: number | null;
+  revenueGrowth?: number | null;
+  profitGrowth?: number | null;
+  dividendYield?: number | null;
+  marketCap?: number | null; // in ₹ Cr
+  bookValue?: number | null;
+  eps?: number | null;
+  beta?: number | null;
+  quarters?: PerformancePeriod[];
+  annuals?: PerformancePeriod[];
 }
 
 export interface QuoteDetail {
@@ -57,6 +93,7 @@ export interface QuoteDetail {
   periodReturn: number | null;
   chartRange: ChartRange;
   indicators: QuoteIndicators;
+  financials?: StockFinancials;
   chart: ChartPoint[];
   updatedAt: string;
 }
@@ -376,8 +413,25 @@ export async function fetchQuoteDetail(
     const sma20 = sma(longCloses, 20);
     const sma50 = sma(longCloses, 50);
     const sma200 = sma(longCloses, 200);
+    const ema20 = ema(longCloses, 20);
+    const ema50 = ema(longCloses, 50);
     const rsi14 = rsi(longCloses, 14);
     const trend = deriveTrend(price, sma50, sma200, rsi14);
+    const macdData = macd(longCloses);
+    const bollinger = bollingerBands(longCloses, 20);
+
+    const dayHigh = round2(meta.regularMarketDayHigh ?? price);
+    const dayLow = round2(meta.regularMarketDayLow ?? price);
+    const fiftyTwoWeekHigh = round2(meta.fiftyTwoWeekHigh ?? price);
+    const fiftyTwoWeekLow = round2(meta.fiftyTwoWeekLow ?? price);
+
+    const pivots = pivotPoints(dayHigh, dayLow, previousClose);
+    const distanceFrom50Dma = sma50 ? round2(((price - sma50) / sma50) * 100) : null;
+    const distanceFrom200Dma = sma200 ? round2(((price - sma200) / sma200) * 100) : null;
+    const range52WeekPercent =
+      fiftyTwoWeekHigh > fiftyTwoWeekLow
+        ? round2(((price - fiftyTwoWeekLow) / (fiftyTwoWeekHigh - fiftyTwoWeekLow)) * 100)
+        : null;
 
     const periodReturn =
       rangeCloses.length >= 2
@@ -400,17 +454,104 @@ export async function fetchQuoteDetail(
       previousClose: round2(previousClose),
       change: round2(change),
       changePercent: round2(changePercent),
-      dayHigh: round2(meta.regularMarketDayHigh ?? price),
-      dayLow: round2(meta.regularMarketDayLow ?? price),
+      dayHigh,
+      dayLow,
       volume: meta.regularMarketVolume ?? rangeVolumes[rangeVolumes.length - 1] ?? 0,
-      fiftyTwoWeekHigh: round2(meta.fiftyTwoWeekHigh ?? price),
-      fiftyTwoWeekLow: round2(meta.fiftyTwoWeekLow ?? price),
+      fiftyTwoWeekHigh,
+      fiftyTwoWeekLow,
       periodReturn,
       chartRange,
-      indicators: { sma20, sma50, sma200, rsi14, trend },
+      indicators: {
+        sma20,
+        sma50,
+        sma200,
+        ema20,
+        ema50,
+        rsi14,
+        trend,
+        macd: macdData,
+        bollinger,
+        pivots,
+        distanceFrom50Dma,
+        distanceFrom200Dma,
+        range52WeekPercent,
+      },
       chart,
       updatedAt: new Date().toISOString(),
     };
+
+    // Enrich with comprehensive fundamentals & financials (P/E, P/B, ROE, Quarters, Annuals)
+    const cleanSym = detail.symbol.toUpperCase();
+    try {
+      const { getStockData, fetchScreenerRatios } = await import("./market-data");
+      const staticData = getStockData(cleanSym);
+
+      let scrapedData = null;
+      try {
+        scrapedData = await fetchScreenerRatios(cleanSym);
+      } catch {
+        // dynamic fallback to static
+      }
+
+      const quarters =
+        scrapedData?.quarters && scrapedData.quarters.length > 0
+          ? scrapedData.quarters
+          : staticData?.quarters || [];
+
+      const annuals =
+        scrapedData?.annuals && scrapedData.annuals.length > 0
+          ? scrapedData.annuals
+          : staticData?.annuals || [];
+
+      const metaAny = meta as unknown as Record<string, unknown>;
+      const pe = scrapedData?.pe || staticData?.pe || (metaAny.trailingPE as number) || null;
+      const bookValue = scrapedData?.bookValue || (staticData?.pb ? round2(price / staticData.pb) : null);
+      const pb =
+        scrapedData?.bookValue && scrapedData.bookValue > 0
+          ? round2(price / scrapedData.bookValue)
+          : staticData?.pb || null;
+      const roe = scrapedData?.roe || staticData?.roe || null;
+      const debtToEquity =
+        scrapedData?.debtToEquity !== undefined
+          ? scrapedData.debtToEquity
+          : staticData?.debtToEquity !== undefined
+          ? staticData.debtToEquity
+          : null;
+      const revenueGrowth = scrapedData?.salesGrowth3Y || staticData?.revenueGrowth || null;
+      const profitGrowth = scrapedData?.profitGrowth3Y || staticData?.profitGrowth || null;
+      const dividendYield =
+        scrapedData?.dividendYield !== undefined
+          ? scrapedData.dividendYield
+          : staticData?.dividendYield !== undefined
+          ? staticData.dividendYield
+          : null;
+      const marketCap =
+        scrapedData?.marketCap ||
+        staticData?.marketCap ||
+        (metaAny.marketCap
+          ? round2((metaAny.marketCap as number) / 1e7)
+          : null);
+      const beta = staticData?.beta || null;
+      const eps = pe && pe > 0 ? round2(price / pe) : null;
+
+      detail.financials = {
+        pe: pe ? round2(pe) : null,
+        pb: pb ? round2(pb) : null,
+        roe: roe ? round2(roe) : null,
+        debtToEquity: debtToEquity !== null ? round2(debtToEquity) : null,
+        revenueGrowth: revenueGrowth !== null ? round2(revenueGrowth) : null,
+        profitGrowth: profitGrowth !== null ? round2(profitGrowth) : null,
+        dividendYield: dividendYield !== null ? round2(dividendYield) : null,
+        marketCap: marketCap ? round2(marketCap) : null,
+        bookValue: bookValue ? round2(bookValue) : null,
+        eps: eps ? round2(eps) : null,
+        beta: beta ? round2(beta) : null,
+        quarters,
+        annuals,
+      };
+    } catch (err) {
+      console.error("Failed to enrich quote with financials:", err);
+    }
 
     const searchHits = await searchSymbols(detail.symbol, 1);
     if (searchHits[0]) {
@@ -423,7 +564,8 @@ export async function fetchQuoteDetail(
 
     detailCache.set(cacheKey, { data: detail, fetchedAt: Date.now() });
     return detail;
-  } catch {
+  } catch (err) {
+    console.error("fetchQuoteDetail failed:", err);
     return null;
   }
 }

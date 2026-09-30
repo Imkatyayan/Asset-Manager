@@ -15,6 +15,7 @@ model User {
   address      String?
   mobile       String?
   role         String      @default("user")
+  plan         String      @default("free") // "free" | "pro"
   createdAt    DateTime    @default(now())
   updatedAt    DateTime    @updatedAt
   portfolios   Portfolio[]

@@ -16,6 +16,7 @@ export interface SessionUser {
   name: string;
   email: string;
   role: string;
+  plan?: string; // "free" | "pro"
 }
 
 export async function hashPassword(password: string): Promise<string> {
@@ -30,11 +31,13 @@ export async function verifyPassword(
 }
 
 export async function createSession(user: SessionUser): Promise<void> {
+  const effectivePlan = user.plan || (user.role === "admin" ? "pro" : "free");
   const token = await new SignJWT({
     id: user.id,
     name: user.name,
     email: user.email,
     role: user.role,
+    plan: effectivePlan,
   })
     .setProtectedHeader({ alg: "HS256" })
     .setExpirationTime(`${SESSION_DURATION}s`)
@@ -57,11 +60,14 @@ export async function getSession(): Promise<SessionUser | null> {
 
   try {
     const { payload } = await jwtVerify(token, JWT_SECRET);
+    const role = (payload.role as string) || "user";
+    const plan = (payload.plan as string) || (role === "admin" ? "pro" : "free");
     return {
       id: payload.id as string,
       name: payload.name as string,
       email: payload.email as string,
-      role: (payload.role as string) || "user",
+      role,
+      plan,
     };
   } catch {
     return null;
@@ -87,7 +93,13 @@ export async function registerUser(
   });
 
   return {
-    user: { id: user.id, name: user.name || "User", email: user.email, role: user.role },
+    user: {
+      id: user.id,
+      name: user.name || "User",
+      email: user.email,
+      role: user.role,
+      plan: user.plan || (user.role === "admin" ? "pro" : "free"),
+    },
   };
 }
 
@@ -102,7 +114,13 @@ export async function loginUser(
   if (!valid) return { error: "Invalid email or password" };
 
   return {
-    user: { id: user.id, name: user.name || "User", email: user.email, role: user.role },
+    user: {
+      id: user.id,
+      name: user.name || "User",
+      email: user.email,
+      role: user.role,
+      plan: user.plan || (user.role === "admin" ? "pro" : "free"),
+    },
   };
 }
 
