@@ -28,9 +28,25 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "Please log in to manage your subscription" }, { status: 401 });
   }
 
+  // Security guard for production:
+  // In production, users cannot self-promote to 'pro' without a verified payment gateway signature.
+  // Direct toggles are only permitted in development mode for testing or by administrators.
+  const isDev = process.env.NODE_ENV !== "production";
+  const isAdmin = session.role === "admin";
+
   try {
     const body = await req.json();
     const targetPlan = body.plan === "free" ? "free" : "pro";
+
+    if (targetPlan === "pro" && !isDev && !isAdmin) {
+      return NextResponse.json(
+        {
+          error:
+            "Direct plan upgrades are disabled in production. Paid subscriptions must be processed via verified payment gateway (Razorpay/Stripe).",
+        },
+        { status: 403 }
+      );
+    }
 
     const updatedUser = await prisma.user.update({
       where: { id: session.id },

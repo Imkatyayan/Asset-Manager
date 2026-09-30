@@ -697,6 +697,31 @@ export function StockProIntelligence({ symbol, name }: StockProIntelligenceProps
               </div>
             </div>
 
+            {/* Pricing Tier Card */}
+            <div className="grid grid-cols-2 gap-3">
+              <div className="rounded-xl border border-market-border bg-market-surface/60 p-3 text-center">
+                <span className="text-[10px] uppercase font-bold text-market-muted">Monthly Pro</span>
+                <p className="mt-1 font-mono text-lg font-bold text-market-text">₹999<span className="text-xs text-market-muted">/mo</span></p>
+                <p className="text-[10px] text-market-muted">Billed monthly</p>
+              </div>
+              <div className="rounded-xl border border-amber-500/40 bg-amber-950/20 p-3 text-center relative overflow-hidden">
+                <span className="absolute top-1 right-2 text-[9px] font-bold text-amber-300 uppercase">Save 33%</span>
+                <span className="text-[10px] uppercase font-bold text-amber-400">Annual Pro</span>
+                <p className="mt-1 font-mono text-lg font-bold text-amber-300">₹7,999<span className="text-xs text-amber-400/70">/yr</span></p>
+                <p className="text-[10px] text-market-muted">₹666 / month</p>
+              </div>
+            </div>
+
+            {/* Sandbox Notice */}
+            <div className="rounded-lg bg-market-surface/40 border border-market-border/60 p-2.5 text-[11px] text-market-muted flex items-start gap-2">
+              <span className="rounded bg-amber-500/20 border border-amber-500/40 px-1.5 py-0.5 text-[9px] font-bold text-amber-300 uppercase shrink-0 mt-0.5">
+                Sandbox Mode
+              </span>
+              <span>
+                Payment gateway (Razorpay/Stripe) is in Dev Sandbox mode. Direct 1-click checkout simulation is enabled for local testing and will be secured with HMAC payment webhooks in production.
+              </span>
+            </div>
+
             {upgradeMsg && (
               <div className="rounded-lg bg-emerald-950/40 border border-emerald-500/30 p-2.5 text-xs text-emerald-400 text-center font-semibold">
                 {upgradeMsg}
@@ -716,7 +741,7 @@ export function StockProIntelligence({ symbol, name }: StockProIntelligenceProps
                 className="w-full sm:w-auto flex items-center justify-center gap-2 rounded-lg bg-gradient-to-r from-amber-500 to-amber-600 px-6 py-2.5 text-xs font-bold text-slate-950 shadow-md hover:brightness-110 active:scale-95 transition-all"
               >
                 {upgrading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Unlock className="h-4 w-4" />}
-                Activate 1-Click Pro Membership
+                Simulate Pro Checkout (Dev Mode)
               </button>
             </div>
           </div>

@@ -3138,8 +3138,8 @@
   },
   "ADANIPOWER": {
     "data": {
-      "marketCap": 430184,
-      "pe": 39.2,
+      "marketCap": 446942,
+      "pe": 40.8,
       "bookValue": 27.5,
       "dividendYield": 0,
       "roe": 22,
@@ -3326,7 +3326,7 @@
         }
       ]
     },
-    "fetchedAt": 1781987439431
+    "fetchedAt": 1790797205349
   },
   "CDSL": {
     "data": {
