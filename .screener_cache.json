@@ -762,10 +762,10 @@
   },
   "COALINDIA": {
     "data": {
-      "marketCap": 273317,
-      "pe": 14.5,
+      "marketCap": 278124,
+      "pe": 14.7,
       "bookValue": 33.5,
-      "dividendYield": 5.98,
+      "dividendYield": 5.87,
       "roe": 97.4,
       "salesGrowth3Y": -7,
       "profitGrowth3Y": 8,
@@ -950,7 +950,7 @@
         }
       ]
     },
-    "fetchedAt": 1781987642659
+    "fetchedAt": 1790448229295
   },
   "DIXON": {
     "data": {
@@ -1717,7 +1717,7 @@
         }
       ]
     },
-    "fetchedAt": 1781525961402
+    "fetchedAt": 1790448229306
   },
   "KPITTECH": {
     "data": {
@@ -2464,7 +2464,7 @@
         }
       ]
     },
-    "fetchedAt": 1781525961413
+    "fetchedAt": 1790448229318
   },
   "VBL": {
     "data": {
@@ -2663,7 +2663,7 @@
         }
       ]
     },
-    "fetchedAt": 1781525961419
+    "fetchedAt": 1790448229313
   },
   "IEX": {
     "data": {
@@ -3714,10 +3714,10 @@
   },
   "HAL": {
     "data": {
-      "marketCap": 280371,
-      "pe": 30.9,
+      "marketCap": 294803,
+      "pe": 32.5,
       "bookValue": 611,
-      "dividendYield": 0.95,
+      "dividendYield": 0.91,
       "roe": 24,
       "salesGrowth3Y": 7,
       "profitGrowth3Y": 16,
@@ -3902,14 +3902,14 @@
         }
       ]
     },
-    "fetchedAt": 1781987439321
+    "fetchedAt": 1790448229276
   },
   "IRFC": {
     "data": {
-      "marketCap": 125314,
-      "pe": 17.9,
+      "marketCap": 130045,
+      "pe": 18.6,
       "bookValue": 43.4,
-      "dividendYield": 2.19,
+      "dividendYield": 2.11,
       "roe": 12.8,
       "salesGrowth3Y": 5,
       "profitGrowth3Y": 3,
@@ -4094,7 +4094,7 @@
         }
       ]
     },
-    "fetchedAt": 1781987439329
+    "fetchedAt": 1790448229338
   },
   "KALYANKJIL": {
     "data": {
@@ -4283,10 +4283,10 @@
   },
   "PFC": {
     "data": {
-      "marketCap": 138951,
-      "pe": 6.93,
+      "marketCap": 142234,
+      "pe": 7.09,
       "bookValue": 311,
-      "dividendYield": 3.75,
+      "dividendYield": 3.67,
       "roe": 20.7,
       "salesGrowth3Y": 14,
       "profitGrowth3Y": 20,
@@ -4471,7 +4471,7 @@
         }
       ]
     },
-    "fetchedAt": 1781987439396
+    "fetchedAt": 1790448229345
   },
   "RVNL": {
     "data": {
@@ -4855,7 +4855,7 @@
         }
       ]
     },
-    "fetchedAt": 1781526418180
+    "fetchedAt": 1790448229265
   },
   "YESBANK": {
     "data": {
@@ -5025,7 +5025,7 @@
   },
   "TCS": {
     "data": {
-      "marketCap": 782121.98,
+      "marketCap": 782013.44,
       "pe": 15.93,
       "bookValue": 234.07,
       "dividendYield": 5.09,
@@ -5108,7 +5108,7 @@
         }
       ]
     },
-    "fetchedAt": 1781526423336
+    "fetchedAt": 1790448239783
   },
   "TATASTEEL": {
     "data": {
@@ -5195,7 +5195,7 @@
         }
       ]
     },
-    "fetchedAt": 1781526419691
+    "fetchedAt": 1790448239746
   },
   "TATAPOWER": {
     "data": {
@@ -5282,7 +5282,7 @@
         }
       ]
     },
-    "fetchedAt": 1781526419813
+    "fetchedAt": 1790448239793
   },
   "TATAELXSI": {
     "data": {
@@ -5456,93 +5456,206 @@
         }
       ]
     },
-    "fetchedAt": 1781526420210
+    "fetchedAt": 1790448239802
   },
   "SBIN": {
     "data": {
-      "marketCap": 938892.27,
-      "pe": 11.73,
-      "bookValue": 552.55,
-      "dividendYield": 1.71,
-      "roe": 17.33,
-      "profitGrowth3Y": 12.88,
+      "marketCap": 907384,
+      "pe": 11.6,
+      "bookValue": 614,
+      "dividendYield": 1.77,
+      "roe": 16.2,
+      "salesGrowth3Y": 13,
+      "profitGrowth3Y": 17,
       "debtToEquity": 0,
       "quarters": [
         {
+          "period": "Jun 2023",
+          "sales": 95975,
+          "netProfit": 16884,
+          "opmPercent": 11,
+          "eps": 18.92
+        },
+        {
+          "period": "Sep 2023",
+          "sales": 101379,
+          "netProfit": 14330,
+          "opmPercent": 8,
+          "eps": 16.06
+        },
+        {
+          "period": "Dec 2023",
+          "sales": 106734,
+          "netProfit": 9164,
+          "opmPercent": 8,
+          "eps": 10.27
+        },
+        {
+          "period": "Mar 2024",
+          "sales": 111043,
+          "netProfit": 20698,
+          "opmPercent": 9,
+          "eps": 23.19
+        },
+        {
+          "period": "Jun 2024",
+          "sales": 111526,
+          "netProfit": 17035,
+          "opmPercent": 11,
+          "eps": 19.09
+        },
+        {
+          "period": "Sep 2024",
+          "sales": 113871,
+          "netProfit": 18331,
+          "opmPercent": 8,
+          "eps": 20.54
+        },
+        {
+          "period": "Dec 2024",
+          "sales": 117427,
+          "netProfit": 16891,
+          "opmPercent": 10,
+          "eps": 18.93
+        },
+        {
           "period": "Mar 2025",
-          "sales": 119509.39,
-          "netProfit": 18642.59,
-          "opmPercent": 20.79,
-          "eps": 0
+          "sales": 119509,
+          "netProfit": 18643,
+          "opmPercent": 0,
+          "eps": 20.89
         },
         {
           "period": "Jun 2025",
-          "sales": 117995.88,
-          "netProfit": 19160.44,
-          "opmPercent": 21.85,
-          "eps": 0
+          "sales": 117996,
+          "netProfit": 19160,
+          "opmPercent": 7,
+          "eps": 21.47
         },
         {
           "period": "Sep 2025",
-          "sales": 119653.93,
-          "netProfit": 20159.67,
-          "opmPercent": 22.15,
-          "eps": 0
+          "sales": 119654,
+          "netProfit": 20160,
+          "opmPercent": 6,
+          "eps": 21.84
         },
         {
           "period": "Dec 2025",
-          "sales": 122556.12,
-          "netProfit": 21028.15,
-          "opmPercent": 23.14,
-          "eps": 0
+          "sales": 122352,
+          "netProfit": 21028,
+          "opmPercent": 8,
+          "eps": 22.78
         },
         {
           "period": "Mar 2026",
-          "sales": 123097.67,
-          "netProfit": 19683.75,
-          "opmPercent": 20.17,
-          "eps": 0
+          "sales": 123098,
+          "netProfit": 19684,
+          "opmPercent": 6,
+          "eps": 21.32
+        },
+        {
+          "period": "Jun 2026",
+          "sales": 127896,
+          "netProfit": 21121,
+          "opmPercent": 10,
+          "eps": 22.88
         }
       ],
       "annuals": [
         {
+          "period": "Mar 2015",
+          "sales": 152397,
+          "netProfit": 13102,
+          "opmPercent": -1,
+          "eps": 17.55
+        },
+        {
+          "period": "Mar 2016",
+          "sales": 163998,
+          "netProfit": 9951,
+          "opmPercent": -8,
+          "eps": 12.82
+        },
+        {
+          "period": "Mar 2017",
+          "sales": 175518,
+          "netProfit": 10484,
+          "opmPercent": -10,
+          "eps": 13.15
+        },
+        {
+          "period": "Mar 2018",
+          "sales": 220499,
+          "netProfit": -6547,
+          "opmPercent": -26,
+          "eps": -7.34
+        },
+        {
+          "period": "Mar 2019",
+          "sales": 242869,
+          "netProfit": 862,
+          "opmPercent": -13,
+          "eps": 0.97
+        },
+        {
+          "period": "Mar 2020",
+          "sales": 257324,
+          "netProfit": 14488,
+          "opmPercent": -7,
+          "eps": 16.23
+        },
+        {
+          "period": "Mar 2021",
+          "sales": 265151,
+          "netProfit": 20410,
+          "opmPercent": -5,
+          "eps": 22.87
+        },
+        {
           "period": "Mar 2022",
-          "sales": 275457.29,
-          "netProfit": 31675.98,
-          "opmPercent": 15.76,
+          "sales": 275457,
+          "netProfit": 31676,
+          "opmPercent": 2,
           "eps": 35.49
         },
         {
           "period": "Mar 2023",
-          "sales": 332103.06,
-          "netProfit": 50232.45,
-          "opmPercent": 20.24,
+          "sales": 332103,
+          "netProfit": 50232,
+          "opmPercent": 10,
           "eps": 56.29
         },
         {
           "period": "Mar 2024",
-          "sales": 415130.66,
-          "netProfit": 61076.62,
-          "opmPercent": 19.7,
+          "sales": 415131,
+          "netProfit": 61077,
+          "opmPercent": 8,
           "eps": 68.44
         },
         {
           "period": "Mar 2025",
-          "sales": 461864.27,
-          "netProfit": 70900.63,
-          "opmPercent": 20.63,
+          "sales": 461864,
+          "netProfit": 70901,
+          "opmPercent": 8,
           "eps": 79.44
         },
         {
           "period": "Mar 2026",
-          "sales": 482797.17,
-          "netProfit": 80032.01,
-          "opmPercent": 21.85,
+          "sales": 482797,
+          "netProfit": 80032,
+          "opmPercent": 8,
           "eps": 86.7
+        },
+        {
+          "period": "TTM",
+          "sales": 493000,
+          "netProfit": 81993,
+          "opmPercent": 7,
+          "eps": 88.82
         }
       ]
     },
-    "fetchedAt": 1781526419706
+    "fetchedAt": 1790448229257
   },
   "SAIL": {
     "data": {
@@ -5633,90 +5746,202 @@
   },
   "RELIANCE": {
     "data": {
-      "marketCap": 1749757.26,
-      "pe": 39.9,
-      "bookValue": 418.41,
-      "dividendYield": 0.46,
-      "roe": 7.91,
-      "salesGrowth3Y": -2.26,
-      "profitGrowth3Y": 24.36,
-      "debtToEquity": 0.4086,
+      "marketCap": 1659089,
+      "pe": 42.3,
+      "bookValue": 418,
+      "dividendYield": 0.49,
+      "roe": 7.71,
+      "salesGrowth3Y": -2,
+      "profitGrowth3Y": -2,
+      "debtToEquity": 0.42,
       "quarters": [
         {
+          "period": "Jun 2023",
+          "sales": 122627,
+          "netProfit": 9627,
+          "opmPercent": 14,
+          "eps": 7.11
+        },
+        {
+          "period": "Sep 2023",
+          "sales": 137380,
+          "netProfit": 11208,
+          "opmPercent": 14,
+          "eps": 8.28
+        },
+        {
+          "period": "Dec 2023",
+          "sales": 127695,
+          "netProfit": 9924,
+          "opmPercent": 14,
+          "eps": 7.33
+        },
+        {
+          "period": "Mar 2024",
+          "sales": 146832,
+          "netProfit": 11283,
+          "opmPercent": 14,
+          "eps": 8.34
+        },
+        {
+          "period": "Jun 2024",
+          "sales": 129898,
+          "netProfit": 7611,
+          "opmPercent": 11,
+          "eps": 5.62
+        },
+        {
+          "period": "Sep 2024",
+          "sales": 130108,
+          "netProfit": 7713,
+          "opmPercent": 10,
+          "eps": 5.7
+        },
+        {
+          "period": "Dec 2024",
+          "sales": 124381,
+          "netProfit": 8721,
+          "opmPercent": 12,
+          "eps": 6.44
+        },
+        {
           "period": "Mar 2025",
-          "sales": 136147,
+          "sales": 132962,
           "netProfit": 11217,
-          "opmPercent": 11.1,
+          "opmPercent": 11,
           "eps": 8.29
         },
         {
           "period": "Jun 2025",
-          "sales": 121369,
+          "sales": 116341,
           "netProfit": 17904,
-          "opmPercent": 10.85,
+          "opmPercent": 11,
           "eps": 13.23
         },
         {
           "period": "Sep 2025",
-          "sales": 130610,
+          "sales": 126335,
           "netProfit": 9129,
-          "opmPercent": 11.02,
+          "opmPercent": 11,
           "eps": 6.75
         },
         {
           "period": "Dec 2025",
-          "sales": 125741,
+          "sales": 121150,
           "netProfit": 9396,
-          "opmPercent": 11.84,
+          "opmPercent": 12,
           "eps": 6.94
         },
         {
           "period": "Mar 2026",
-          "sales": 146385,
+          "sales": 141823,
           "netProfit": 7422,
-          "opmPercent": 8.17,
+          "opmPercent": 8,
           "eps": 5.48
+        },
+        {
+          "period": "Jun 2026",
+          "sales": 163631,
+          "netProfit": 13272,
+          "opmPercent": 12,
+          "eps": 9.81
         }
       ],
       "annuals": [
         {
+          "period": "Mar 2015",
+          "sales": 328013,
+          "netProfit": 22719,
+          "opmPercent": 10,
+          "eps": 16.46
+        },
+        {
+          "period": "Mar 2016",
+          "sales": 231743,
+          "netProfit": 27384,
+          "opmPercent": 17,
+          "eps": 19.81
+        },
+        {
+          "period": "Mar 2017",
+          "sales": 240597,
+          "netProfit": 31425,
+          "opmPercent": 18,
+          "eps": 22.65
+        },
+        {
+          "period": "Mar 2018",
+          "sales": 289188,
+          "netProfit": 33612,
+          "opmPercent": 18,
+          "eps": 24.87
+        },
+        {
+          "period": "Mar 2019",
+          "sales": 370744,
+          "netProfit": 35163,
+          "opmPercent": 16,
+          "eps": 26
+        },
+        {
+          "period": "Mar 2020",
+          "sales": 336097,
+          "netProfit": 30903,
+          "opmPercent": 16,
+          "eps": 22.85
+        },
+        {
+          "period": "Mar 2021",
+          "sales": 245050,
+          "netProfit": 31944,
+          "opmPercent": 14,
+          "eps": 25.19
+        },
+        {
           "period": "Mar 2022",
-          "sales": 422323,
+          "sales": 422413,
           "netProfit": 39084,
-          "opmPercent": 12.06,
-          "eps": 28.04
+          "opmPercent": 12,
+          "eps": 28.89
         },
         {
           "period": "Mar 2023",
-          "sales": 539347,
+          "sales": 537909,
           "netProfit": 44190,
-          "opmPercent": 12.16,
-          "eps": 31.78
+          "opmPercent": 12,
+          "eps": 32.66
         },
         {
           "period": "Mar 2024",
-          "sales": 534534,
+          "sales": 531908,
           "netProfit": 42042,
-          "opmPercent": 13.89,
+          "opmPercent": 14,
           "eps": 31.07
         },
         {
           "period": "Mar 2025",
-          "sales": 517349,
+          "sales": 515425,
           "netProfit": 35262,
-          "opmPercent": 11.18,
+          "opmPercent": 11,
           "eps": 26.06
         },
         {
           "period": "Mar 2026",
-          "sales": 505649,
+          "sales": 504026,
           "netProfit": 43851,
-          "opmPercent": 10.7,
-          "eps": 32.41
+          "opmPercent": 11,
+          "eps": 32.4
+        },
+        {
+          "period": "TTM",
+          "sales": 552939,
+          "netProfit": 39219,
+          "opmPercent": 11,
+          "eps": 28.98
         }
       ]
     },
-    "fetchedAt": 1781526419865
+    "fetchedAt": 1790448229241
   },
   "RELAXO": {
     "data": {
@@ -5995,7 +6220,7 @@
         }
       ]
     },
-    "fetchedAt": 1781987643735
+    "fetchedAt": 1790448229375
   },
   "POONAWALLA": {
     "data": {
@@ -6256,7 +6481,7 @@
         }
       ]
     },
-    "fetchedAt": 1781526419790
+    "fetchedAt": 1790448239753
   },
   "NTPC": {
     "data": {
@@ -6343,7 +6568,7 @@
         }
       ]
     },
-    "fetchedAt": 1781526418862
+    "fetchedAt": 1790448239760
   },
   "MRF": {
     "data": {
@@ -6517,7 +6742,7 @@
         }
       ]
     },
-    "fetchedAt": 1781526420131
+    "fetchedAt": 1790448239721
   },
   "ITCHOTELS": {
     "data": {
@@ -6670,7 +6895,7 @@
         }
       ]
     },
-    "fetchedAt": 1781526418851
+    "fetchedAt": 1790448239767
   },
   "IRCTC": {
     "data": {
@@ -7036,7 +7261,7 @@
         }
       ]
     },
-    "fetchedAt": 1781526418870
+    "fetchedAt": 1790448239735
   },
   "INFY": {
     "data": {
@@ -7123,7 +7348,7 @@
         }
       ]
     },
-    "fetchedAt": 1781526418883
+    "fetchedAt": 1790448239775
   },
   "INDUSINDBK": {
     "data": {
@@ -7401,7 +7626,7 @@
         }
       ]
     },
-    "fetchedAt": 1781525962558
+    "fetchedAt": 1790448229329
   },
   "IGL": {
     "data": {
@@ -7785,7 +8010,7 @@
         }
       ]
     },
-    "fetchedAt": 1781526418999
+    "fetchedAt": 1790448229252
   },
   "HUDCO": {
     "data": {
@@ -7981,10 +8206,10 @@
   },
   "HINDALCO": {
     "data": {
-      "marketCap": 227734,
-      "pe": 22.6,
+      "marketCap": 226970,
+      "pe": 22.5,
       "bookValue": 341,
-      "dividendYield": 0.49,
+      "dividendYield": 0.5,
       "roe": 13.7,
       "salesGrowth3Y": 14,
       "profitGrowth3Y": 45,
@@ -8169,7 +8394,7 @@
         }
       ]
     },
-    "fetchedAt": 1781987643077
+    "fetchedAt": 1790448229285
   },
   "HDFCBANK": {
     "data": {
@@ -8361,7 +8586,7 @@
         }
       ]
     },
-    "fetchedAt": 1781526418083
+    "fetchedAt": 1790448229247
   },
   "HAPPSTMNDS": {
     "data": {
@@ -8745,7 +8970,7 @@
         }
       ]
     },
-    "fetchedAt": 1781526418014
+    "fetchedAt": 1790448230622
   },
   "DEEPAKNTR": {
     "data": {
@@ -9900,12 +10125,12 @@
         }
       ]
     },
-    "fetchedAt": 1781526416802
+    "fetchedAt": 1790448229271
   },
   "ADANIGREEN": {
     "data": {
-      "marketCap": 244045,
-      "pe": 298,
+      "marketCap": 213573,
+      "pe": 312,
       "bookValue": 90.4,
       "dividendYield": 0,
       "roe": 7.1,
@@ -9914,45 +10139,38 @@
       "debtToEquity": 1.7,
       "quarters": [
         {
-          "period": "Mar 2023",
-          "sales": 1632,
-          "netProfit": -240,
-          "opmPercent": 6,
-          "eps": -1.52
-        },
-        {
           "period": "Jun 2023",
           "sales": 691,
           "netProfit": -205,
-          "opmPercent": -1,
+          "opmPercent": -0.9,
           "eps": -1.29
         },
         {
           "period": "Sep 2023",
           "sales": 1917,
           "netProfit": -259,
-          "opmPercent": 0,
+          "opmPercent": -0.3,
           "eps": -1.64
         },
         {
           "period": "Dec 2023",
           "sales": 2089,
           "netProfit": 113,
-          "opmPercent": 4,
+          "opmPercent": 4.3,
           "eps": 0.71
         },
         {
           "period": "Mar 2024",
           "sales": 7304,
           "netProfit": -195,
-          "opmPercent": 2,
+          "opmPercent": 1.7,
           "eps": -1.23
         },
         {
           "period": "Jun 2024",
           "sales": 3343,
           "netProfit": -89,
-          "opmPercent": 4,
+          "opmPercent": 3.8,
           "eps": -0.56
         },
         {
@@ -9973,14 +10191,14 @@
           "period": "Mar 2025",
           "sales": 6461,
           "netProfit": 83,
-          "opmPercent": 5,
+          "opmPercent": 4.7,
           "eps": 0.52
         },
         {
           "period": "Jun 2025",
           "sales": 4789,
           "netProfit": 34,
-          "opmPercent": 4,
+          "opmPercent": 4.3,
           "eps": 0.21
         },
         {
@@ -9994,15 +10212,22 @@
           "period": "Dec 2025",
           "sales": 3355,
           "netProfit": 82,
-          "opmPercent": 4,
+          "opmPercent": 4.3,
           "eps": 0.5
         },
         {
           "period": "Mar 2026",
           "sales": 6249,
           "netProfit": 13,
-          "opmPercent": 3,
+          "opmPercent": 2.7,
           "eps": 0.08
+        },
+        {
+          "period": "Jun 2026",
+          "sales": 6206,
+          "netProfit": -51,
+          "opmPercent": 1.2,
+          "eps": -0.31
         }
       ],
       "annuals": [
@@ -10024,7 +10249,7 @@
           "period": "Mar 2018",
           "sales": 1719,
           "netProfit": -46,
-          "opmPercent": 1,
+          "opmPercent": 1.2,
           "eps": -0.34
         },
         {
@@ -10038,35 +10263,35 @@
           "period": "Mar 2020",
           "sales": 1247,
           "netProfit": 134,
-          "opmPercent": -3,
+          "opmPercent": -3.3,
           "eps": 0.86
         },
         {
           "period": "Mar 2021",
           "sales": 2473,
           "netProfit": 364,
-          "opmPercent": 1,
+          "opmPercent": 1.2,
           "eps": 2.33
         },
         {
           "period": "Mar 2022",
           "sales": 10672,
           "netProfit": -58,
-          "opmPercent": 1,
+          "opmPercent": 1.1,
           "eps": -0.37
         },
         {
           "period": "Mar 2023",
           "sales": 7629,
           "netProfit": -328,
-          "opmPercent": -2,
+          "opmPercent": -1.9,
           "eps": -2.07
         },
         {
           "period": "Mar 2024",
           "sales": 12001,
           "netProfit": -546,
-          "opmPercent": 2,
+          "opmPercent": 1.9,
           "eps": -3.45
         },
         {
@@ -10082,10 +10307,17 @@
           "netProfit": 604,
           "opmPercent": 5,
           "eps": 3.67
+        },
+        {
+          "period": "TTM",
+          "sales": 19757,
+          "netProfit": 519,
+          "opmPercent": 4.1,
+          "eps": 3.15
         }
       ]
     },
-    "fetchedAt": 1781526416790
+    "fetchedAt": 1790448229300
   },
   "AARTIDRUGS": {
     "data": {
@@ -10277,7 +10509,7 @@
         }
       ]
     },
-    "fetchedAt": 1781526418033
+    "fetchedAt": 1790448230629
   },
   "TRIDENT": {
     "data": {
@@ -10853,10 +11085,10 @@
   },
   "MAZDOCK": {
     "data": {
-      "marketCap": 97219,
-      "pe": 39.9,
+      "marketCap": 101599,
+      "pe": 41.7,
       "bookValue": 219,
-      "dividendYield": 0.72,
+      "dividendYield": 0.69,
       "roe": 30.4,
       "salesGrowth3Y": 18,
       "profitGrowth3Y": 31,
@@ -11041,7 +11273,7 @@
         }
       ]
     },
-    "fetchedAt": 1781987439389
+    "fetchedAt": 1790448229355
   },
   "WAAREEENER": {
     "data": {
@@ -12126,196 +12358,8 @@
     "fetchedAt": 1781525963066
   },
   "PNB": {
-    "data": {
-      "marketCap": 124044,
-      "pe": 7.35,
-      "bookValue": 124,
-      "dividendYield": 2.78,
-      "roe": 12.5,
-      "salesGrowth3Y": 15,
-      "profitGrowth3Y": 89,
-      "debtToEquity": 0,
-      "quarters": [
-        {
-          "period": "Mar 2023",
-          "sales": 23849,
-          "netProfit": 1159,
-          "opmPercent": -6,
-          "eps": 1.05
-        },
-        {
-          "period": "Jun 2023",
-          "sales": 25145,
-          "netProfit": 1255,
-          "opmPercent": -6,
-          "eps": 1.14
-        },
-        {
-          "period": "Sep 2023",
-          "sales": 26355,
-          "netProfit": 1756,
-          "opmPercent": -1,
-          "eps": 1.59
-        },
-        {
-          "period": "Dec 2023",
-          "sales": 27288,
-          "netProfit": 2223,
-          "opmPercent": 3,
-          "eps": 2.02
-        },
-        {
-          "period": "Mar 2024",
-          "sales": 28113,
-          "netProfit": 3010,
-          "opmPercent": 2,
-          "eps": 2.73
-        },
-        {
-          "period": "Jun 2024",
-          "sales": 28556,
-          "netProfit": 3252,
-          "opmPercent": 6,
-          "eps": 2.95
-        },
-        {
-          "period": "Sep 2024",
-          "sales": 29875,
-          "netProfit": 4303,
-          "opmPercent": 7,
-          "eps": 3.74
-        },
-        {
-          "period": "Dec 2024",
-          "sales": 31340,
-          "netProfit": 4508,
-          "opmPercent": 11,
-          "eps": 3.92
-        },
-        {
-          "period": "Mar 2025",
-          "sales": 31989,
-          "netProfit": 4567,
-          "opmPercent": 5,
-          "eps": 3.97
-        },
-        {
-          "period": "Jun 2025",
-          "sales": 31964,
-          "netProfit": 1675,
-          "opmPercent": 5,
-          "eps": 1.46
-        },
-        {
-          "period": "Sep 2025",
-          "sales": 31872,
-          "netProfit": 4904,
-          "opmPercent": 7,
-          "eps": 4.27
-        },
-        {
-          "period": "Dec 2025",
-          "sales": 32231,
-          "netProfit": 5100,
-          "opmPercent": 4,
-          "eps": 4.44
-        },
-        {
-          "period": "Mar 2026",
-          "sales": 32157,
-          "netProfit": 5225,
-          "opmPercent": 9,
-          "eps": 4.55
-        }
-      ],
-      "annuals": [
-        {
-          "period": "Mar 2015",
-          "sales": 46315,
-          "netProfit": 3062,
-          "opmPercent": -3,
-          "eps": 16.51
-        },
-        {
-          "period": "Mar 2016",
-          "sales": 47424,
-          "netProfit": -3974,
-          "opmPercent": -24,
-          "eps": -20.24
-        },
-        {
-          "period": "Mar 2017",
-          "sales": 47276,
-          "netProfit": 1325,
-          "opmPercent": -14,
-          "eps": 6.23
-        },
-        {
-          "period": "Mar 2018",
-          "sales": 47996,
-          "netProfit": -12283,
-          "opmPercent": -58,
-          "eps": -44.49
-        },
-        {
-          "period": "Mar 2019",
-          "sales": 51310,
-          "netProfit": -9975,
-          "opmPercent": -43,
-          "eps": -21.67
-        },
-        {
-          "period": "Mar 2020",
-          "sales": 53800,
-          "netProfit": 336,
-          "opmPercent": -15,
-          "eps": 0.5
-        },
-        {
-          "period": "Mar 2021",
-          "sales": 80818,
-          "netProfit": 2022,
-          "opmPercent": -9,
-          "eps": 1.93
-        },
-        {
-          "period": "Mar 2022",
-          "sales": 74880,
-          "netProfit": 3457,
-          "opmPercent": -10,
-          "eps": 3.14
-        },
-        {
-          "period": "Mar 2023",
-          "sales": 85144,
-          "netProfit": 2507,
-          "opmPercent": -8,
-          "eps": 2.28
-        },
-        {
-          "period": "Mar 2024",
-          "sales": 106902,
-          "netProfit": 8245,
-          "opmPercent": 1,
-          "eps": 7.49
-        },
-        {
-          "period": "Mar 2025",
-          "sales": 121761,
-          "netProfit": 16630,
-          "opmPercent": 8,
-          "eps": 14.47
-        },
-        {
-          "period": "Mar 2026",
-          "sales": 128223,
-          "netProfit": 16904,
-          "opmPercent": 7,
-          "eps": 14.71
-        }
-      ]
-    },
-    "fetchedAt": 1781525963207
+    "data": null,
+    "fetchedAt": 1790448240263
   },
   "CENTRALBK": {
     "data": {
@@ -12892,5 +12936,273 @@
       ]
     },
     "fetchedAt": 1781525963233
+  },
+  "HDFCLIFE": {
+    "data": null,
+    "fetchedAt": 1790448240227
+  },
+  "JINDALSTEL": {
+    "data": null,
+    "fetchedAt": 1790448240229
+  },
+  "BAJAJHLDNG": {
+    "data": null,
+    "fetchedAt": 1790448240231
+  },
+  "LODHA": {
+    "data": null,
+    "fetchedAt": 1790448240234
+  },
+  "CUMMINSIND": {
+    "data": null,
+    "fetchedAt": 1790448240235
+  },
+  "ASIANPAINT": {
+    "data": null,
+    "fetchedAt": 1790448240239
+  },
+  "TVSMOTOR": {
+    "data": null,
+    "fetchedAt": 1790448240240
+  },
+  "SIEMENS": {
+    "data": null,
+    "fetchedAt": 1790448240242
+  },
+  "BPCL": {
+    "data": null,
+    "fetchedAt": 1790448240244
+  },
+  "CHOLAFIN": {
+    "data": null,
+    "fetchedAt": 1790448240246
+  },
+  "ABB": {
+    "data": null,
+    "fetchedAt": 1790448240248
+  },
+  "APOLLOHOSP": {
+    "data": null,
+    "fetchedAt": 1790448240250
+  },
+  "TORNTPHARM": {
+    "data": null,
+    "fetchedAt": 1790448240251
+  },
+  "BOSCHLTD": {
+    "data": null,
+    "fetchedAt": 1790448240254
+  },
+  "BANKBARODA": {
+    "data": null,
+    "fetchedAt": 1790448240256
+  },
+  "WIPRO": {
+    "data": null,
+    "fetchedAt": 1790448240257
+  },
+  "UNIONBANK": {
+    "data": null,
+    "fetchedAt": 1790448240258
+  },
+  "ADANIENSOL": {
+    "data": null,
+    "fetchedAt": 1790448240259
+  },
+  "DLF": {
+    "data": null,
+    "fetchedAt": 1790448240261
+  },
+  "HYUNDAI": {
+    "data": null,
+    "fetchedAt": 1790448240262
+  },
+  "MOTHERSON": {
+    "data": null,
+    "fetchedAt": 1790448240265
+  },
+  "ZYDUSLIFE": {
+    "data": null,
+    "fetchedAt": 1790448240266
+  },
+  "CGPOWER": {
+    "data": null,
+    "fetchedAt": 1790448240268
+  },
+  "PIDILITIND": {
+    "data": null,
+    "fetchedAt": 1790448240273
+  },
+  "EICHERMOT": {
+    "data": null,
+    "fetchedAt": 1790448240275
+  },
+  "SOLARINDS": {
+    "data": null,
+    "fetchedAt": 1790448240276
+  },
+  "SBILIFE": {
+    "data": null,
+    "fetchedAt": 1790448240278
+  },
+  "GRASIM": {
+    "data": null,
+    "fetchedAt": 1790448240279
+  },
+  "TECHM": {
+    "data": null,
+    "fetchedAt": 1790448240285
+  },
+  "SHRIRAMFIN": {
+    "data": null,
+    "fetchedAt": 1790448240294
+  },
+  "POWERGRID": {
+    "data": null,
+    "fetchedAt": 1790448240600
+  },
+  "DIVISLAB": {
+    "data": null,
+    "fetchedAt": 1790448240603
+  },
+  "BAJAJ-AUTO": {
+    "data": null,
+    "fetchedAt": 1790448240605
+  },
+  "BAJAJFINSV": {
+    "data": null,
+    "fetchedAt": 1790448240606
+  },
+  "LT": {
+    "data": null,
+    "fetchedAt": 1790448240844
+  },
+  "BEL": {
+    "data": null,
+    "fetchedAt": 1790448240847
+  },
+  "ULTRACEMCO": {
+    "data": null,
+    "fetchedAt": 1790448240849
+  },
+  "JSWSTEEL": {
+    "data": null,
+    "fetchedAt": 1790448240852
+  },
+  "NAUKRI": {
+    "data": null,
+    "fetchedAt": 1790448241276
+  },
+  "COLPAL": {
+    "data": null,
+    "fetchedAt": 1790448241280
+  },
+  "BHEL": {
+    "data": null,
+    "fetchedAt": 1790448241283
+  },
+  "DABUR": {
+    "data": null,
+    "fetchedAt": 1790448241285
+  },
+  "ICICIPRULI": {
+    "data": null,
+    "fetchedAt": 1790448241289
+  },
+  "HAVELLS": {
+    "data": null,
+    "fetchedAt": 1790448241292
+  },
+  "NESTLEIND": {
+    "data": null,
+    "fetchedAt": 1790448241294
+  },
+  "AXISBANK": {
+    "data": null,
+    "fetchedAt": 1790448241811
+  },
+  "TITAN": {
+    "data": null,
+    "fetchedAt": 1790448241826
+  },
+  "SUNPHARMA": {
+    "data": null,
+    "fetchedAt": 1790448241828
+  },
+  "HCLTECH": {
+    "data": null,
+    "fetchedAt": 1790448241830
+  },
+  "HINDUNILVR": {
+    "data": null,
+    "fetchedAt": 1790448241832
+  },
+  "CIPLA": {
+    "data": null,
+    "fetchedAt": 1790448241834
+  },
+  "M&M": {
+    "data": null,
+    "fetchedAt": 1790448241836
+  },
+  "BHARTIARTL": {
+    "data": null,
+    "fetchedAt": 1790448241839
+  },
+  "CANBK": {
+    "data": null,
+    "fetchedAt": 1790448241841
+  },
+  "ADANIENT": {
+    "data": null,
+    "fetchedAt": 1790448241843
+  },
+  "MARUTI": {
+    "data": null,
+    "fetchedAt": 1790448241845
+  },
+  "KOTAKBANK": {
+    "data": null,
+    "fetchedAt": 1790448241846
+  },
+  "AMBUJACEM": {
+    "data": null,
+    "fetchedAt": 1790448241848
+  },
+  "MAXHEALTH": {
+    "data": null,
+    "fetchedAt": 1790448241851
+  },
+  "BRITANNIA": {
+    "data": null,
+    "fetchedAt": 1790448242844
+  },
+  "GAIL": {
+    "data": null,
+    "fetchedAt": 1790448242852
+  },
+  "VEDL": {
+    "data": null,
+    "fetchedAt": 1790448242857
+  },
+  "DRREDDY": {
+    "data": null,
+    "fetchedAt": 1790448242861
+  },
+  "SHREECEM": {
+    "data": null,
+    "fetchedAt": 1790448242863
+  },
+  "HDFCAMC": {
+    "data": null,
+    "fetchedAt": 1790448242865
+  },
+  "MUTHOOTFIN": {
+    "data": null,
+    "fetchedAt": 1790448242868
+  },
+  "GODREJCP": {
+    "data": null,
+    "fetchedAt": 1790448242876
   }
 }
