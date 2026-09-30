@@ -75,10 +75,25 @@ export default async function DashboardPage({
     <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6">
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h1 className="text-2xl font-bold">
-            Welcome, {session.name.split(" ")[0]}
-          </h1>
-          <p className="mt-1 text-text-secondary">Your portfolio command center</p>
+          <div className="flex items-center gap-2.5">
+            <h1 className="text-2xl font-bold">
+              Welcome, {session.name.split(" ")[0]}
+            </h1>
+            {session.role === "admin" ? (
+              <span className="rounded-md border border-purple-500/40 bg-purple-500/15 px-2 py-0.5 text-xs font-bold text-purple-300">
+                🛡️ Admin
+              </span>
+            ) : session.plan === "pro" ? (
+              <span className="rounded-md border border-amber-500/40 bg-amber-500/15 px-2 py-0.5 text-xs font-bold text-amber-300">
+                ★ Pro
+              </span>
+            ) : (
+              <span className="rounded-md border border-market-border bg-market-surface px-2 py-0.5 text-xs font-semibold text-market-muted">
+                Free Plan
+              </span>
+            )}
+          </div>
+          <p className="mt-1 text-text-secondary text-sm">Your portfolio command center</p>
         </div>
         <Link href="/portfolio">
           <Button>

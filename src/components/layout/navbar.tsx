@@ -10,7 +10,7 @@ import { HeaderWatchlist } from "@/components/layout/header-watchlist";
 import { cn } from "@/lib/utils";
 
 interface NavbarProps {
-  user?: { name: string; email: string; role?: string } | null;
+  user?: { name: string; email: string; role?: string; plan?: string } | null;
 }
 
 export function Navbar({ user }: NavbarProps) {
@@ -77,11 +77,24 @@ export function Navbar({ user }: NavbarProps) {
             <>
               <Link
                 href="/profile"
-                className="text-xs text-market-muted hover:text-market-text transition-colors duration-200"
+                className="flex items-center gap-2 text-xs text-market-muted hover:text-market-text transition-colors duration-200"
               >
                 <span className="font-medium text-market-text hover:text-market-up transition-colors duration-200">
                   Welcome <strong className="text-market-up font-semibold">{(user.name || "User").split(" ")[0]}</strong>
                 </span>
+                {user.role === "admin" ? (
+                  <span className="rounded px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-wider bg-purple-500/15 text-purple-300 border border-purple-500/40">
+                    ADMIN
+                  </span>
+                ) : user.plan === "pro" ? (
+                  <span className="rounded px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-wider bg-amber-500/15 text-amber-300 border border-amber-500/40 flex items-center gap-0.5">
+                    ★ PRO
+                  </span>
+                ) : (
+                  <span className="rounded px-1.5 py-0.5 text-[9px] font-semibold uppercase tracking-wider bg-market-surface text-market-muted border border-market-border">
+                    FREE
+                  </span>
+                )}
               </Link>
               <Button variant="ghost" size="sm" onClick={handleLogout}>
                 <LogOut className="h-3.5 w-3.5" />
@@ -113,6 +126,24 @@ export function Navbar({ user }: NavbarProps) {
             <span className="text-xs text-market-muted">Theme</span>
             <ThemeToggle />
           </div>
+          {user && (
+            <div className="mb-3 flex items-center justify-between rounded-lg border border-market-border bg-market-card px-3 py-2">
+              <span className="text-xs font-semibold text-market-text">{user.name || "User"}</span>
+              {user.role === "admin" ? (
+                <span className="rounded px-1.5 py-0.5 text-[9px] font-bold bg-purple-500/15 text-purple-300 border border-purple-500/40">
+                  ADMIN
+                </span>
+              ) : user.plan === "pro" ? (
+                <span className="rounded px-1.5 py-0.5 text-[9px] font-bold bg-amber-500/15 text-amber-300 border border-amber-500/40">
+                  ★ PRO
+                </span>
+              ) : (
+                <span className="rounded px-1.5 py-0.5 text-[9px] font-semibold bg-market-surface text-market-muted border border-market-border">
+                  FREE
+                </span>
+              )}
+            </div>
+          )}
           {navLinks.map((link) => (
             <div key={link.href} className="contents">
               <Link
